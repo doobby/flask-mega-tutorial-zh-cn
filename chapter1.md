@@ -100,7 +100,7 @@ $ venv\Scripts\activate
 
 上面的指令没有报错，表示 Flask 被正常安装，庆祝一下吧。
 
-## TODO A "Hello, World" Flask Application (0.5/3.5)
+## TODO A "Hello, World" Flask Application (1.1/3.5)
 
 [Flask 官网](http://flask.pocoo.org/) 上包含了一个五行代码的示例 WEB 应用。我不打算重复这个简单例子，而是给你一个更复杂的例子，让你对大型应用结构有更好的了解。
 
@@ -112,7 +112,8 @@ Application （应用）也被置于一个 Package （包）内。在 Python 中
 (venv) $ mkdir app
 ```
 
-新建一个 `app/__init__.py`，定义 Flask 应用实例
+新建一个 `__init__.py` 包含如下代码
+
 ```python
 from flask import Flask
 
@@ -120,6 +121,26 @@ app = Flask(__name__)
 
 from app import routes
 ``` 
+(`app/__init__.py`: Flask 应用实例)
+
+上面的脚本简单的创建了一个 Flask 类的实例，Flask 类由 flask 包中导出。传给 `Flask` 类的变量 `__name__` 是 Python 预定义的变量，表示当前模块的名称。Flask 根据这个模块的位置来确定相应的资源的目录，比如在[第二章](chapter2.md)中将会提到的 template （模块）文件。一般来说，使用 `__name__` 能适应大部分应用场景。最后我们导入了 `routes` 模块，但还没有使用到。
+
+代码中的 `app` 实例与包 `app` 可能会令你感到迷惑。其中 `app` 包指的是 `app` 目录以及其中的 `__init__.py` 脚本，我们导入了包中的内容：`from app import routes`。而 `app` 变量是 `Flask` 类的一个实例，它也是 `app` 包中的一个成员。
+
+另一个特殊的地方是我们在最后才导入了 `routes` 模块，而不是习惯上的在脚本开头导入。之所以要在最后导入是为了解决循环导入问题（circular imports）——这种问题在 Flask 中很常见。下面的讲解中，我们将看到  `routes` 模块中一开始导入了 `app` 变量，把相互依赖的模块中的一个的导入语句放在最后，以避免相互引用问题。
+
+那么，`routes` 模块在哪里？Route （路由）对应于应用为不同 URL 实现的处理方法。在 Flask 中，route 的处理方法由 Python 函数表示，被称为 view functions。View function 被映射到一个或多个 URL，Flask 在收到 Client 的请求后会调用相应的处理方法。
+
+下面是我们的第一个 view function：`app/routes.py` （主页 Route）
+
+```python
+from app import app
+
+@app.route('/')
+@app.route('/index')
+def index():
+    return "Hello, World!"
+```
 
 
 
