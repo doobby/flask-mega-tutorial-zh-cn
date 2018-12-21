@@ -3,6 +3,6 @@ Chinese Translation for the [The Flask Mega-Tutorial](https://blog.miguelgrinber
 
 ## How to contribute
 * Create new `chapter[id].md` file if it's not exists
-* Create headlines and mark the title with `TODO` prefix
+* Create headlines and mark the title with `TODO` and your user identity
 * Estimate the total time need to translate and record it in the section you want to translate, like `(0/15m)`
-* After translate the whole section, remove the `TODO` and time mark
+* After complete translating the whole section, remove the `TODO` and time mark
