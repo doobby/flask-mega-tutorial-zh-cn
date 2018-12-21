@@ -100,5 +100,27 @@ $ venv\Scripts\activate
 
 上面的指令没有报错，表示 Flask 被正常安装，庆祝一下吧。
 
-## TODO A "Hello, World" Flask Application (3.5)
+## TODO A "Hello, World" Flask Application (0.5/3.5)
+
+[Flask 官网](http://flask.pocoo.org/) 上包含了一个五行代码的示例 WEB 应用。我不打算重复这个简单例子，而是给你一个更复杂的例子，让你对大型应用结构有更好的了解。
+
+Application （应用）也被置于一个 Package （包）内。在 Python 中，一个包含有 `__init__.py` 文件的子目录就是一个 Package，包可以被导入 (imported)。当你导入一个包时， `__init__.py` 脚本将被执行，其中定义的符号将可以被外部访问到。
+
+让我们创建一个 `app` 的包，其中包含有我们应用的代码。现在我们在 `microblog` 目录下建立目录 
+
+```bash
+(venv) $ mkdir app
+```
+
+新建一个 `app/__init__.py`，定义 Flask 应用实例
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+from app import routes
+``` 
+
+
+
 
