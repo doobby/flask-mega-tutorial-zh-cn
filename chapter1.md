@@ -4,13 +4,10 @@
 
 ## 安装 Python
 
-要做的第一件事情是安装 Python 环境。如果你的操作系统没有提供安装包，可
-以到[官网](http://python.org/download/)获取。如果你用的是 Windows 的
-WSL 或者 Cygwin 环境，需要注意你要安装的 Python 不是 Windows 原生版本，
-而应该选择 Ubuntu (WSL) 或者 Cygwin 的版本。
+要做的第一件事情是安装 Python 环境。如果你的操作系统没有提供安装包，可以到[官网](http://python.org/download/)获取。如果你用的是 Windows 的
+WSL 或者 Cygwin 环境，注意你要安装的 Python 不是 Windows 原生版本，而应该选择 Ubuntu (WSL) 或者 Cygwin 的版本。
 
-要验证 Python 是否正常工作，可以打开一个 terminal 窗口，输入 `python3`
-或者 `python`。正常的话应该会看到
+要验证 Python 是否正常工作，可以打开一个 terminal 窗口，输入 `python3` 或者 `python`。正常的话应该会看到
 
 ```bash
 $ python3
@@ -20,16 +17,14 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> _
 ```
 
-此时 Python 解释器在等待输入。在后面的章节里，你将学习到交互式命令行的
-各种功能。不过现在只是确认 Python 被安装好了。输入 `exit()` 回车退出
-Python 命令行。或者在 Linux 或者 Mac OS X 上使用快捷键 `Ctrl-D`，
-Windows 上使用 `Ctrl-Z` 加回车退出。
+此时 Python 解释器在等待输入。在后面的章节里，你将学习到交互式命令行的各种功能。不过现在只是确认 Python 被安装好了。输入 `exit()` 回车退出
+Python 命令行。或者在 Linux 或者 Mac OS X 上使用快捷键 `Ctrl-D`，Windows 上使用 `Ctrl-Z` 加回车退出。
 
 ## 安装 Flask
 
-接下来安装 `Flask`，但在此之前我说明一下 Python 包安装的最佳实践。
+接下来安装 `Flask`，但在此之前先来说明一下 Python 包安装的最佳方式。
 
-Python 的包（比如 Flask）保存在一个公共仓库，任何人都可以下载并且安装它们。Python 官方的包仓库被称为 [PyPI](https://pypi.python.org/pypi) (Python Package Index，Python 包索引，也有人把这个仓库称作奶酪商店 (cheese shop))。
+Python 的包（比如 Flask）被保存在一个公共仓库，任何人都可以下载并且安装它们。Python 官方的包仓库被称为 [PyPI](https://pypi.python.org/pypi) (Python Package Index，Python 包索引，也有人把这个仓库称作奶酪商店 (cheese shop))。
 
 要从 PyPI 上获取并安装软件包非常容易，Python 提供了一个 `pip` 工具来完成这件事（在 Python 27 中 `pip` 尚未被打包在 Python 中需要单独的安装）。
 
@@ -39,7 +34,7 @@ Python 的包（比如 Flask）保存在一个公共仓库，任何人都可以�
 $ pip install <package-name>
 ```
 
-不过大多数情况上面的命令不会成功。因为当 Python 解释器被全局安装（可以被计算机上的所有用户访问），作为普通用户你是没有权限来对 Python 进行一些修改操作的，只有管理员用户才能正常安装。`pip` 工具从 PyPI 上下载包，把它添加到 Python 的安装目录中，这样所有的 Python 脚本都可以使用这个包提供的脚本。
+不大多数情况上面的命令不会成功。因为当 Python 解释器被全局安装（可以被计算机上的所有用户访问），作为普通用户你是没有权限来对 Python 进行一些修改操作的，只有管理员用户才能正常安装。`pip` 工具从 PyPI 上下载包，把它添加到 Python 的安装目录中，这样所有的 Python 脚本都可以使用这个包提供的脚本。
 
 假设你已经使用 Flask 0.11 版本来实现了自己的 web 应用。而 Flask 有了 0.12 版本，你要开发的第二个应用决定使用 0.12 版，但是升级 Flask 版本可能会影响之前的 web 应用。所以我们最好设法让第一个应用使用 Flask 0.11，而新的应用使用 Flask 0.12 版。
 
