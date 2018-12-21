@@ -25,7 +25,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 Python 命令行。或者在 Linux 或者 Mac OS X 上使用快捷键 `Ctrl-D`，
 Windows 上使用 `Ctrl-Z` 加回车退出。
 
-## TODO 安装 Flask (1/2.5)
+## 安装 Flask
 
 接下来安装 `Flask`，但在此之前我说明一下 Python 包安装的最佳实践。
 
@@ -57,6 +57,48 @@ $ cd microblog
 ```bash
 python3 -m venv venv
 ```
+
+命令指示 Python 运行 venv 包，告诉它来创建一个名为 `venv` 的 Virtual Environment。第一个 `venv` 是 Python Virutal Environment 包的名称，第二个是要创建的 Virtual Environment 包的名称。如果你对此仍有困惑，那么你可以他第二个 `venv` 改成任何名称来表示 Virtual Environment。一般习惯会在工程目录下创建一个 `venv` 目录来作为  Virtual Environment 环境，这样切到工程目录时就能找到对应的 Virtual Environment 环境。
+
+注意，有些操作系统中，你需要用 `python` 而不是 `python3`。不过也有一些系统的 `python` 指的是 Python 2.X 版本，`python3`表示 3.X 版本。
+
+当命令执行完成后，将会生成一个 `venv` 目录，里面保存有 Virtual Environment 需要的文件。
+
+如果你使用的 Python 版本低于 3.4（包括 2.7），Virtual Environment 并没有被打包在 Python 中。对这些低版本，你需要去单独下载和安装 [virtualenv](https://virtualenv.pypa.io/) 工具。安装后你可以直接用 `virtualenv` 创建 virtual environment
+
+```bash
+$ virtualenv venv
+```
+
+无论用何种方式创建好 venv，接下来你需要告知系统你要使用（激活）Virtual Environment
+
+```bash
+$ source venv/bin/activate
+(venv) $ _
+```
+
+如果你使用的是 Window CMD 窗口，则需要用以下命令
+```cmd
+$ venv\Scripts\activate
+(venv) $ _
+```
+
+激活 virtual environment 后，你的当前 terminal 会话讲使用虚拟环境中的 Python 解释器。并且命令提示符也发生了变化提醒你在虚拟环境中。Virtual Environment 仅临时并且私有的在当前会话内生效，关闭窗口自动退出。甚至在你同时打开了多个 terminal 时，可以为每个 terminal 配置使用不同的虚拟环境。
+
+现在在虚拟环境中，我们来安装 Flask
+
+```bash
+(venv) $ pip install flask
+```
+
+如果你想确认 Flask 被安装成功，可以启动一个 Python 解释器尝试导入 Flask 包
+
+```bash
+>>> import flask
+>>> _
+```
+
+上面的指令没有报错，表示 Flask 被正常安装，庆祝一下吧。
 
 ## TODO A "Hello, World" Flask Application (3.5)
 
