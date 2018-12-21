@@ -112,7 +112,7 @@ Application （应用）也被置于一个 Package （包）内。在 Python 中
 (venv) $ mkdir app
 ```
 
-新建一个 `__init__.py` 包含如下代码
+新建 `app/__init__.py` 脚本，表示 Flask 应用实例
 
 ```python
 from flask import Flask
@@ -121,7 +121,7 @@ app = Flask(__name__)
 
 from app import routes
 ``` 
-(`app/__init__.py`: Flask 应用实例)
+
 
 上面的脚本简单的创建了一个 Flask 类的实例，Flask 类由 flask 包中导出。传给 `Flask` 类的变量 `__name__` 是 Python 预定义的变量，表示当前模块的名称。Flask 根据这个模块的位置来确定相应的资源的目录，比如在[第二章](chapter2.md)中将会提到的 template （模块）文件。一般来说，使用 `__name__` 能适应大部分应用场景。最后我们导入了 `routes` 模块，但还没有使用到。
 
@@ -141,7 +141,6 @@ from app import app
 def index():
     return "Hello, World!"
 ```
-
 
 
 
