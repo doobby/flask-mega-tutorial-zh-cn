@@ -95,7 +95,7 @@ $ venv\Scripts\activate
 
 上面的指令没有报错，表示 Flask 被正常安装，庆祝一下吧。
 
-## TODO A "Hello, World" Flask Application (1.1/3.5)
+## TODO A "Hello, World" Flask Application (1.3/3.5)
 
 [Flask 官网](http://flask.pocoo.org/) 上包含了一个五行代码的示例 WEB 应用。我不打算重复这个简单例子，而是给你一个更复杂的例子，让你对大型应用结构有更好的了解。
 
@@ -137,5 +137,5 @@ def index():
     return "Hello, World!"
 ```
 
-
+这个 view function 相当简单，只是返回了字符串 `Hello, World!" 作为问候。上面的两行 `@app.route` 被称为 decorators （装饰器）。装饰器是 Python 语言的一个特殊语法，用来修改其装饰的函数的功能。装饰器常用于将函数注册为某种事件的回调。在这个例子中，装饰器建立了 URL 和回调函数的连接关系，URL '/' 和 '/index' 都被关联到这一函数。这表示当浏览器访问这两个 URL 时，Flask 将调用这个函数，并将返回值作为回应改善到浏览器。当然这点对当前应用意义还没那么明显。
 
