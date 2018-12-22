@@ -95,7 +95,7 @@ $ venv\Scripts\activate
 
 上面的指令没有报错，表示 Flask 被正常安装，庆祝一下吧。
 
-## TODO A "Hello, World" Flask Application (1.3/3.5)
+## A "Hello, World" Flask Application
 
 [Flask 官网](http://flask.pocoo.org/) 上包含了一个五行代码的示例 WEB 应用。我不打算重复这个简单例子，而是给你一个更复杂的例子，让你对大型应用结构有更好的了解。
 
@@ -137,5 +137,63 @@ def index():
     return "Hello, World!"
 ```
 
-这个 view function 相当简单，只是返回了字符串 `Hello, World!" 作为问候。上面的两行 `@app.route` 被称为 decorators （装饰器）。装饰器是 Python 语言的一个特殊语法，用来修改其装饰的函数的功能。装饰器常用于将函数注册为某种事件的回调。在这个例子中，装饰器建立了 URL 和回调函数的连接关系，URL '/' 和 '/index' 都被关联到这一函数。这表示当浏览器访问这两个 URL 时，Flask 将调用这个函数，并将返回值作为回应改善到浏览器。当然这点对当前应用意义还没那么明显。
+这个 view function 相当简单，只是返回了字符串 “Hello, World!" 作为问候。上面的两行 `@app.route` 被称为 decorators （装饰器）。
 
+装饰器是 Python 语言的一个特殊语法，用来修改其装饰的函数的功能。装饰器常用于将函数注册为某种事件的回调。在这个例子中，装饰器建立了 URL 和回调函数的连接关系，URL '/' 和 '/index' 都被关联到这一函数。这表示当浏览器访问这两个 URL 时，Flask 将调用这个函数，并将返回值作为回应改善到浏览器。当然这点对当前应用意义还没那么明显。
+
+你需要在创建一个 Python 脚本，定义 Flask 应用实例。现在创建名为 `microblog.py` 的脚本（主应用模块），其中只有一行，导入了应用实例
+
+```python
+from app import app
+```
+
+还记得我们之前区分两个 `app` 的说明吗？这里你在同一句中看到了两个 `app`。后者表示 Flask 应用实例，由 `app` 包中导出。如果你还是觉得迷惑，不妨把包名或者应用实例名改成其它名字。
+
+再次确认一下当前的工作成果，下面是你的工程的目录结构：
+
+```
+microblog/
+  venv/
+  app/
+    __init__.py
+    routes.py
+  microblog.py
+```
+
+没错，这就是你完成的第一版的 web 应用。在运行他之前，你需要设置 `FLASK_APP` 环境变量来告诉 Flask 如何运行它：
+
+```bash
+(venv) $ export FLASK_APP=microblog.py
+```
+
+如果你使用的是 Windows 系统，用 `set` 替代上面的 `export` 命令。
+
+准备好了吗？现在来运行我们的第一个 web 应用
+
+```bash
+(venv) $ flask run
+ * Serving Flask app "microblog"
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+```
+
+在服务初始化完成后，将等待客户端连接。`flask run` 的输出内容表示服务监听了 `127.0.0.1` 地址，亦即仅允许本机访问。这个地址也常常被写做 `localhost`。网络服务会监听特定的端口，一般生产环境的 web 服务会监听 443 端口或者 80 端口（非加密），但监听这些端口需要有管理员的权限。因为现在我们只是测试，Flask 使用了 5000 端口。现在打开你的浏览器来访问地址 http://localhost:5000/ 或者 http://localhost:5000/index
+
+这两个地址实际上都指向同一个 view function，因此返回结果也是相同的，即函数的返回字符串。如果你输入其它 URL，那将会看到错误，因为我们只定义了这两个 URL 的处理方法。
+
+![hello-world](./images/ch01-hello-world.png)
+
+按 Ctrl-C 结束服务，现在我们完成了成为 web 开发者的第一步，非常重大的一步。
+
+在结束这一章之前，我想再强调一件事情。因为环境变量只在当前会话生效，如果每次都要为新的终端设置 `FLASK_APP` 变量会非常繁琐。从 Flask 1.0 版开始，Flask 允许你注册环境变量，这些变量将会在执行 flask 命令时自动被导入。要使用这种方式，你需要安装 `python-dotenv` 包
+
+```bash
+(venv) $ pip install python-dotenv
+```
+
+然后把环境变量写到项目根目录下的 `.flaskenv` 文件中，表示 flask 命令自动导入的环境变量
+
+```
+FLASK_APP=microblog.py
+```
+
+这一步是可选的，如果你愿意手动设置环境变量，那也由你，只要你能记得住。
