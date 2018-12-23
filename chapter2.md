@@ -95,7 +95,26 @@ def index():
 
 `render_template()` 实际上调用了 Flask 集成的 [jinja2 模板引擎](http://jinja.pocoo.org/)。由 Jinja2 来实现用模板变量对 `{{ ...}}` 的替换工作。
 
-## TODO Conditional Statements (0/0.7)
+## 条件语句
+
+刚才我们已经介绍了 Jinja2 通过替换占位符 (placeholders) 实现渲染页面的功能。但这不过是 Jinja2 支持的丰富的模板功能的其中之一。此外，模板还支持控制语句 `{% ... %}` ，这里我们来添加一个条件分支语句，如下所示是改进后的 `app/templates/index.html` 文件
+
+```python
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - Microblog</title>
+        {% else %}
+        <title>Welcome to Microblog!</title>
+        {% endif %}
+    </head>
+    <body>
+        <h1>Hello, {{ user.username }}!</h1>
+    </body>
+</html>
+```
+
+这样模板就有了一个新的功能：如果 view function 没有传入 `title` 变量，那么将显示默认的标题。你可以通过不给 `render_template()` 传入 `title` 参数来检查分支控制的效果。
 
 ## TODO Loops (0/2.5)
 
