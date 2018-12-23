@@ -99,7 +99,7 @@ def index():
 
 刚才我们已经介绍了 Jinja2 通过替换占位符 (placeholders) 实现渲染页面的功能。但这不过是 Jinja2 支持的丰富的模板功能的其中之一。此外，模板还支持控制语句 `{% ... %}` ，这里我们来添加一个条件分支语句，如下所示是改进后的 `app/templates/index.html` 文件
 
-```python
+```html
 <html>
     <head>
         {% if title %}
@@ -116,6 +116,59 @@ def index():
 
 这样模板就有了一个新的功能：如果 view function 没有传入 `title` 变量，那么将显示默认的标题。你可以通过不给 `render_template()` 传入 `title` 参数来检查分支控制的效果。
 
-## TODO Loops (0/2.5)
+## 循环语句
+
+登录进来的用户想要看到最新的博客内容，现在我们来改进我们的程序来支持这一功能。
+
+同样，我们先构造用户和博客的数据来进行测试，如下所示 `app/routes.py`
+
+```python
+from flask import render_template
+from app import app
+
+@app.route('/')
+@app.route('/index')
+def index():
+    user = {'username': 'Miguel'}
+    posts = [
+        {
+            'author': {'username': 'John'},
+            'body': 'Beautiful day in Portland!'
+        },
+        {
+            'author': {'username': 'Susan'},
+            'body': 'The Avengers movie was so cool!'
+        }
+    ]
+    return render_template('index.html', title='Home', user=user, posts=posts)
+```
+
+我们用 List 表示用户的博客，每个元素用一个包含 `author` 和 `body` 的字典表示。当我们来实现真正的用户管理和博客管理时，我们也需要保持这两个字段，这样我们现在用假数据设计和测试的代码依然会有效。
+
+在模板中，我们面临的主要问题时，只有 view function 知道有多少博客需要被展示在页面上。而模板本身是不应该假设有多少博客，而需要一个通用的方法。这就是 Jinja2 中提供的 `for` 循环控制语句。
+
+我们修改后的支持 for 循环的模板如下所示 (`app/templates/index.html`)
+
+```html
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - Microblog</title>
+        {% else %}
+        <title>Welcome to Microblog</title>
+        {% endif %}
+    </head>
+    <body>
+        <h1>Hi, {{ user.username }}!</h1>
+        {% for post in posts %}
+        <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+        {% endfor %}
+    </body>
+</html>
+```
+
+并不困难对吧？加入几个新的博客到我们的 view function 的 post 列表中，运行一下这个新的版本，我们将看到所有的博客都被列出来了，如下图所示
+
+![mock-posts](./images/ch02-mock-posts.png)
 
 ## TODO Template Inheritance (0/2.3)
