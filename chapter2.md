@@ -171,4 +171,46 @@ def index():
 
 ![mock-posts](./images/ch02-mock-posts.png)
 
-## TODO Template Inheritance (0/2.3)
+## 模板继承 (Template Inheritance)
+
+当下大多数的应用一般都会在顶部显示一个导航栏，其中包含一些常用的链接，比如个人信息、登录、退出等。我们可以在 `index.html` 模板中加入一些代码来实现这种功能。但是有个问题，当我们的应用变得复杂后，我们想要给不同的页面都加上这样的导航栏，显然重复来为每个 HTML 模板加上导航代码太繁琐了。编程有一个共识：避免重复 (it is a good practice to not repeat yourself if that is possible)
+
+Jinjia2 有一个特征称作 template inheritance （模板继承）。简单的说，我们可以把每个模板中需要用到的公共部分提取到一个单独的基本模板中，让所有的模板都继承它。
+
+现在我们来定义一个 `bash.html` 作为基本模板，其中包含了一个基本的导航栏，基本就是我们之前的 `index.html` 的内容。如下是 `app/templates/base.html` 代码
+
+```html
+<html>
+    <head>
+      {% if title %}
+      <title>{{ title }} - Microblog</title>
+      {% else %}
+      <title>Welcome to Microblog</title>
+      {% endif %}
+    </head>
+    <body>
+        <div>Microblog: <a href="/index">Home</a></div>
+        <hr>
+        {% block content %}{% endblock %}
+    </body>
+</html>
+```
+
+在这个模板中，我们使用了 `block` 控制语句，定义了继承的子模板将被插入的位置。Block 需要赋予一个唯一名字，这样每个子模板可以通过这个名字来引用自己。
+
+有了基本模板，我们可以简化 `index.html` 的实现，让它继承 `base.html`，代码如下所示
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Hi, {{ user.username }}!</h1>
+    {% for post in posts %}
+    <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+    {% endfor %}
+{% endblock %}
+```
+
+这样 `base.html` 模板来负责全局的页面总局，`index.html` 只需要负责内容部分。`extends` 语句建立了与基本模板的联系，这样 Jinja2 会将 `index.html` 内部混合到 `base.html`。这两个模板中有同名的 `block` 对象 `content`，Jinja2 将之一起渲染。如果我们需要创建更多的页面，我们同样可以继承 `base.html` 模板，不同的页面共享样式和布局，不会有代码的重复。
+
+![inheritance](./images/ch02-inheritance.png)
