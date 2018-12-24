@@ -18,7 +18,19 @@ SQLAlchemy 同时支持很多种关系型数据库的 ORM 映射，常见的如 
 (venv) $ pip install flask-sqlalchemy
 ```
 
-## TODO Database Migrations (0/0.4)
+## 数据库迁移（Migrations）
+
+大部分的数据库教程都会详细介绍如何创建和使用库，但对于当应用更新而需要对数据库进行更新的问题解释很不详细。当然，关系型数据库的更新本身就很困难，因为围绕着结构化数据，任何结构的改变都有很大的迁移(Migrated) 工作量。
+
+我要使用的第二个扩展是 [Flask-Migrate](https://github.com/miguelgrinberg/flask-migrate)，这正是我们想要的。这一扩展封装了 [Alembic](https://github.com/miguelgrinberg/flask-migrate) 库，该库是针对 SQLAlchemy 的数据库迁移框架。要加入数据库迁移支持，我们需要在开始时做一些额外的工作 ，但这是值得的，这让你后来的修改变得更加容易和稳定。
+
+同样使用 pip 来安装扩展
+
+```bash
+(venv) $ pip install flask-migrate
+```
+
+
 ## TODO Flask-SQLAlchemy Configuration (0/0.9)
 ## TODO Database Models (0/1.3)
 ## TODO Creating The Migration Repository (0/0.6)
