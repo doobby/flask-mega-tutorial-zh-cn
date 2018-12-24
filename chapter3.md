@@ -124,7 +124,42 @@ HTML 的 `<form>` 元素中包含了我们的 Web 表单。其中 `action` 属�
 
 `form.hidden_tag()` 生成了一个隐藏的元素，其中包含了用于防止 CSRF 攻击的令牌信息。我们要做是确保引入这一隐藏元素，并且在 Flask 配置中定义 `SECRET_KEY` 变量，其它的都由 Flask-WTF 扩展来完成。
 
-如果你曾经写过 HTML Web 表单，你会奇怪在模板中我们没有为每个表单项加入 HTML 标签。这是因为我们的 form 对象知道如何生成 HTML 标签。我们要做的只是引入 `{{ form.<field_name>.label }}` 来插入标签名，引入 ``{{ form.<field_name>() }}` 来生成表单项。要为 HTML 标签添加属性，我们只需要把它们当成参数传入即可。例如上面的用户名和密码我们传入了 `size` 参数，用被添加到 HTML 的 `<input>` 标签属性中。同样，你的 CSS Class 或者 ID 设置也可以这样做。
+如果你曾经写过 HTML Web 表单，你会奇怪在模板中我们没有为每个表单项加入 HTML 标签。这是因为我们的 form 对象知道如何生成 HTML 标签。我们要做的只是引入 `{{ form.<field_name>.label }}` 来插入标签名，引入 `{{ form.<field_name>() }}` 来生成表单项。要为 HTML 标签添加属性，我们只需要把它们当成参数传入即可。例如上面的用户名和密码我们传入了 `size` 参数，用被添加到 HTML 的 `<input>` 标签属性中。同样，你的 CSS Class 或者 ID 设置也可以这样做。
+
+## 表单 View Function
+
+显示表单页的最后一步是定义一个新的 view function，以渲染模板生成页面。
+
+我们来写这个 view function，将之映射到 `/login` URL 上。代码保存于 `app/routes.py`
+
+```python
+from flask import render_template
+from app import app
+from app.forms import LoginForm
+
+# ...
+
+@app.route('/login')
+def login():
+    form = LoginForm()
+    return render_template('login.html', title='Sign In', form=form)
+```
+
+通过从 forms.py 中导入 `LoginForm` 类，实例化生成 `form` 对象，将之传递给 form 关键字参数。这就是我们渲染表单需要的全部操作。
+
+为了方便登录，我们为导航栏添加一个登录的链接。修改后的 `app/templates/base.html` 代码如下
+
+```html
+<div>
+    Microblog:
+    <a href="/index">Home</a>
+    <a href="/login">Login</a>
+</div>
+```
+
+现在运行我们的服务，在浏览器中访问 http://localhost:5000 ，点击导航栏的 `Login` 链接就可以看到登录页面了。帅吧！
+
+![login-form](images/ch03-login-form.png)
 
 ## TODO Form Views (0/1.9)
 ## TODO Receiving Form Data (0/3.3)
