@@ -30,8 +30,51 @@ SQLAlchemy 同时支持很多种关系型数据库的 ORM 映射，常见的如 
 (venv) $ pip install flask-migrate
 ```
 
+## 配置 Flask-SQLAlchemy
 
-## TODO Flask-SQLAlchemy Configuration (0/0.9)
+在开发过程中，我们选择使用 SQLite 数据库。SQLite 数据库是开发小型甚至更大规模应用最方便好用的数据库。它的数据被存储于硬盘上的一个文件中，不需要像 MySQL 或者 PostgreSQL 那样启动服务。
+
+我们为配置 `config.py` 中添加相关配置，如下
+
+```python
+import os
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+class Config(object):
+    # ...
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+```
+
+Flask-SQLAlchemy 扩展从 `SQLALCHEMY_DATABASE_URI` 配置变量中获取数据库的连接信息。回忆一下我们在[第三章](chapter3.md)所讲，使用环境变量来配置 Flask，并为之提供一个默认值以防环境变量没有设置。在这里，我通过 `DATABASE_URL` 环境变量来设置数据库地址，如果未指定，则使用应用主目录( `basedir` )下的 `app.db` 文件做为默认位置 。
+
+`SQLALCHEMY_TRACK_MODIFICATIONS` 配置项设为 `False` 禁用了 Flask-SQLAlchemy 中我们暂时用不到的功能：在每次修改数据库时触发某个操作。
+
+应用中我们把数据库表示成 Python 对象，同样数据库迁移也是一个 Python 对象。这些对象需要在初始化时被创建，如下 `app/__init__.py` 所示
+
+```python
+from flask import Flask
+from config import Config
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+app = Flask(__name__)
+app.config.from_object(Config)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+from app import routes, models
+```
+
+我们加入了三部分内容：
+1. `db` 对象表示数据库实例
+2. `migrate` 表示数据库迁移实例
+3. `models` 模块中将定义数据库的表结构
+
+大部分的 Flask 扩展都和上面 `db`、`migrate` 有一样初始化语法
+
+
 ## TODO Database Models (0/1.3)
 ## TODO Creating The Migration Repository (0/0.6)
 ## TODO The First Database Migration (0/0.9)
