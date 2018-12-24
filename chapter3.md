@@ -161,7 +161,70 @@ def login():
 
 ![login-form](images/ch03-login-form.png)
 
-## TODO Form Views (0/1.9)
-## TODO Receiving Form Data (0/3.3)
+## 获取表单数据
+
+在浏览器点击提交按键后，浏览器会显示 "Method Not Allowed" 错误。这是因为我们之前的登录 view function 只完成了一半工作。它只定义了表单的生成，还没有定义数据提交的处理逻辑。Flask-WTF 扩展同样也简化了这部分的工作。下面是我们改进 view function 后的代码 `app/routes.py`，其中添加了验证和接受表单提交请求。
+
+```python
+from flask import render_template, flash, redirect
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        flash('Login requested for user {}, remember_me={}'.format(
+            form.username.data, form.remember_me.data))
+        return redirect('/index')
+    return render_template('login.html', title='Sign In', form=form)
+```
+
+首先我们在 route 装饰器上添加了 `methods` 参数，告诉 Flask 这个 view function 可以接收 `GET` 和 `POST` 请求（默认 Flask 只接受 `GET` 请求）。在 HTTP 协议中，`GET` 方法用于客户端（浏览器）请求数据，目前我们所有的方法都是 `GET`。而 `POST` 通常由浏览器提交数据到服务端（实际上 `GET` 请求也可以提交数据，但不是一个好的方式）。"Method Not Allowed" 错误正是因为浏览器发送的 `POST` 请求不被 Flask 认可。通过添加 `methods` 参数，我们允许了对这个 URL 的 `POST` 请求。
+
+`form.validate_on_submit()` 方法完成了表单的处理工作。当浏览器首次 `GET` 方式请求页面时，这一方法返回 `False`，于是跳过这段代码，直接执行最后的渲染代码。
+
+用户点击提交后，浏览器发送 `POST` 请求，`form.validate_on_submit()` 将收集用户提交的数据，根据我们指定的验证方法来加以校验，如果正常的话返回 `True`，表示数据一切正常。任何错误都将导致返回 `False`，这样将重新渲染表单页面，让用户重新登录，和之前的 `GET` 方法一样。随后我们还会给这个页面添加错误信息，来提示错误原因。
+
+当 `form.validate_on_submit()` 返回 `True` 后，`login` 函数调用了两个由 `Flask` 中导入的新函数。其中 `flask()` 函数用于返回一条消息给用户 。许多应用都会使用这一方法来告知用户操作成功与否。在这里我们仅仅将这作为一种临时方法，因为我们还没有真正涉及到用户登录功能。目前我们做的只是返回一条信息告诉浏览器登录成功。
+
+第二个新函数是 `redirect()` 函数，它的作用是使浏览器自动跳转到其它页面（`/index`），这样在登录成功后，我们将跳转到首页。
+
+当你调用 `flash()` 函数时， Flask 会保存这条消息，但是真正的消息不会自动出现在页面上。我们需要在基础模板上添加一块新的内容来渲染这条消息，这样在所有的页面都能看到。修改后的带有 flash 消息的基础模板代码 `app/templates/base.html` 如下所示
+
+```python
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - microblog</title>
+        {% else %}
+        <title>microblog</title>
+        {% endif %}
+    </head>
+    <body>
+        <div>
+            Microblog:
+            <a href="/index">Home</a>
+            <a href="/login">Login</a>
+        </div>
+        <hr>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </body>
+</html>
+```
+
+我们用到了 `with` 构造器来将 `get_flashed_messages()` 返回的内容保存在 `messages` 变量中，该变量仅在模板的这部分上下文内生效。`get_flashed_messages()` 函数来自于 Flask，返回了由 `flash()` 函数注册的全部消息。后面的条件判断检查是否有消息存在，如果有则以无序号列表（ `<ul>` ）方式列出每条消息（`<li>`）。用列表来显示消息并不美观，后面我们会来修改默认样式。
+
+注意：被 `get_flashed_messages()` 读取的消息将从消息列表中移除，因此只有重新 `flash()` 的消息才会被再次显示。
+
+又到了验证奇迹的时候了，填好你的用户名和密码并提交，看看 `DataRequired` 验证器是如何阻止提交操作的。
+
 ## TODO Improving Field Validation (0/2.3)
 ## TODO Generating Links (0/1.9)
