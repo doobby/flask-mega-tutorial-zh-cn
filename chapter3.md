@@ -67,7 +67,30 @@ from app import routes
 'you-will-never-guess'
 ```
 
-## TODO User Login Form (0/1.1)
+## 用户登录表单
+
+Flask-WTF 扩展使用 Python 类来表示 Web 表单。一个 Form 类基本就是把定义了类成员变量的普通类。
+
+记着我们的关注点分离原则，我现在要定义一个新的 `app/forms.py` 模块来存储我们的 Web 表单类。用户登录时需要提供用户名和密码，此外表单还会有一个“记住登录状态”的选项以及一个“提交”按键
+
+```python
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import DataRequired
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('Remember Me')
+    submit = SubmitField('Sign In')
+```
+
+大多数的 Flask 扩展都以 `flask_<name>` 来命名，这里 Flask-WTF 的名称就是 `flask_wtf` ，我们从中导入了基类 `FlaskForm`
+
+用来表示成员类型的四个类直接由 WTForms 包导入，Flask-WTF 扩展并不支持自定义类型。对于 `LoginForm` 类的每个成员变量被限制为某种类型，并配置了标签名（或者描述信息）。
+
+有的变量中传入了第二个可选参数 `validators`，其中 `DataRequired` 用来验证该表单项不为空。验证函数有很多，后面我们还会在其它表单项中用到。
+
 ## TODO Form Templates (0/2.1)
 ## TODO Form Views (0/1.9)
 ## TODO Receiving Form Data (0/3.3)
