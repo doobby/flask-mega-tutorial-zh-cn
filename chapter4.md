@@ -136,7 +136,37 @@ Flask-Migrate 扩展了 `flask` 子命令（记得之前的 `flask run` 命令�
 
 正确执行后将生成一个 `migrations` 目录，其中包含有一些文件和有版本号标识的子目录。这些文件从现在起也是我们工程的一部分，需要将它们加入到我们的版本管理系统中。
 
-## TODO The First Database Migration (0/0.9)
+## 第一次数据库迁移
+
+当迁移仓库就位后，我们可以演示下如何对 `User` 数据库模型进行迁移。迁移有两种方式：手动或者自动。要完成自动迁移，Alembic 通过比较 Python 的数据库模型与实际数据库的表结构，生成迁移脚本来对数据库进行一些修改以符合模型定义。此时，我们还没有生成数据库，因此自动迁移将生成整个用户表。下面演示了 `flask db migrate` 子命令如何完成自动迁移操作的
+
+```bash
+(venv) $ flask db migrate -m "users table"
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'user'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_email' on '['email']'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_username' on '['username']'
+  Generating /home/miguel/microblog/migrations/versions/e517276bb1c2_users_table.py ... done
+```
+
+命令打印出了本次迁移的过程。前两行可以直接忽略，下来它找到一个 `user` 表和两个索引，然后生成了迁移脚本，`e517276bb1c2` 是本次迁移对应的标识号（每个人执行结果不同）。我们传给 `-m` 的内容是可选的注释，用来描述本次迁移。
+
+生成的迁移脚本现在是项目的一部分，我们把它加入版本控制。如果好奇你可以研究研究生成的迁移代码。其中有两个函数分别是 `upgrade()` 和 `downgrade()`，前者用于更新，更者用于回退。这样 Alembic 可以在不同的历史版本间切换。
+
+`flask db migrate` 命令并没有对数据库进行修改，只是生成了迁移脚本。要做用于数据库，需要调用 `flask db upgrade` 命令
+
+```bash
+(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
+```
+
+由于我们使用 SQLite 做为数据库，`upgrade` 命令检测到数据库不存在（命令执行后将生成 `app.db` 文件）而创建它。对于 MySQL 或者 PostgreSQL 数据库，你将会看到有新的 database 被创建。
+
+注意 Flask-SQLAlchemy 使用了 snake case （蛇形命令法）来命名表名。因此 `User` 类对应的表名为 `user`。如果数据库模型名为 `AddressAndPone`，则生成的表名应该为 `address_and_phone`。你可以自由选择生成的表名，可以在模型类中添加 `__tablename__` 属性，将之设置为你想要的表名。
+
 ## TODO Database Upgrade and Downgrade Workflow (0/0.6)
 ## TODO Database Relationships (0/1.9)
 ## TODO Play Time (0/2.2)
