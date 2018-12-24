@@ -184,13 +184,13 @@ def login():
 
 用户点击提交后，浏览器发送 `POST` 请求，`form.validate_on_submit()` 将收集用户提交的数据，根据我们指定的验证方法来加以校验，如果正常的话返回 `True`，表示数据一切正常。任何错误都将导致返回 `False`，这样将重新渲染表单页面，让用户重新登录，和之前的 `GET` 方法一样。随后我们还会给这个页面添加错误信息，来提示错误原因。
 
-当 `form.validate_on_submit()` 返回 `True` 后，`login` 函数调用了两个由 `Flask` 中导入的新函数。其中 `flask()` 函数用于返回一条消息给用户 。许多应用都会使用这一方法来告知用户操作成功与否。在这里我们仅仅将这作为一种临时方法，因为我们还没有真正涉及到用户登录功能。目前我们做的只是返回一条信息告诉浏览器登录成功。
+当 `form.validate_on_submit()` 返回 `True` 后，`login` 函数调用了两个由 `Flask` 中导入的新函数。其中 `flash()` 函数用于返回一条消息给用户 。许多应用都会使用这一方法来告知用户操作成功与否。在这里我们仅仅将这作为一种临时方法，因为我们还没有真正涉及到用户登录功能。目前我们做的只是返回一条信息告诉浏览器登录成功。
 
 第二个新函数是 `redirect()` 函数，它的作用是使浏览器自动跳转到其它页面（`/index`），这样在登录成功后，我们将跳转到首页。
 
 当你调用 `flash()` 函数时， Flask 会保存这条消息，但是真正的消息不会自动出现在页面上。我们需要在基础模板上添加一块新的内容来渲染这条消息，这样在所有的页面都能看到。修改后的带有 flash 消息的基础模板代码 `app/templates/base.html` 如下所示
 
-```python
+```html
 <html>
     <head>
         {% if title %}
@@ -226,5 +226,47 @@ def login():
 
 又到了验证奇迹的时候了，填好你的用户名和密码并提交，看看 `DataRequired` 验证器是如何阻止提交操作的。
 
-## TODO Improving Field Validation (0/2.3)
+## 改进表单项验证
+
+表单项中指定的验证器将阻止不合法的输入。对于不合法的输入，应用将会重新渲染表单，并且给用户足够的错误信息反馈。
+
+如果你试过提交不合法的输入，我相信你一定注意到验证器确实在起作用，但是没有提示信息来表明什么地方出错是了，仅仅是重新渲染了初始表单。下一步我们需要提升用户体验，为表单添加一个验证错误的提示信息说明。
+
+事实上，表单的验证器已经包含了错误原因，我们只需要添加额外的处理逻辑，好让模板可以把它们展示出来。
+
+这里在登录模板中，我们为用户名和密码两个表单项添加验证错误信息栏。如下所示是我们修改后的 `app/templates/login.html` 代码
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Sign In</h1>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}<br>
+            {% for error in form.username.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}<br>
+            {% for error in form.password.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+我们在 username 和 password 表单的最后添加了 for 循环，并将验证错误信息以红色显示出来。任何表单项的验证错误信息都被存放于 `form.<field_name>.errors` 列表中（因为同一个表单项可能有多个验证器，会检查出多个问题）。
+
+这次你如果提交了空的用户名和密码，你将看到列友好的错误提示消息，如下图所示：
+
+![validation](./images/ch03-validation.png)
+
 ## TODO Generating Links (0/1.9)
