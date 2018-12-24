@@ -91,7 +91,41 @@ class LoginForm(FlaskForm):
 
 有的变量中传入了第二个可选参数 `validators`，其中 `DataRequired` 用来验证该表单项不为空。验证函数有很多，后面我们还会在其它表单项中用到。
 
-## TODO Form Templates (0/2.1)
+## 表单模板 (Form Templates)
+
+接下来我们需要把表单嵌入到 HTML 模板中来生成页面。一个好消息是我们定义在 `LoginForm` 中的成员变量可以被自动生成 HTML 内容，这样我们要作的事情就很简单了。下面你将看到我们的登录模板代码，我们把它保存在 `app/templates/login.html` 文件
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Sign In</h1>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}
+        </p>
+        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+我们继承了（`extends`）[第二章](chapter2.md)里定义的 `base.html` 基本模板，来保证页面顶部有一个通用样式的导航栏。
+
+这个模板需要使用 `LoginForm` 生成 `form` 对象来提供参数，用户的输入将被发送到相应的 view function 中，目前我们还没有实现。
+
+HTML 的 `<form>` 元素中包含了我们的 Web 表单。其中 `action` 属性指示了浏览器在进行提交时应该使用的 URL，当设置为空时默认使用当前 URL 地址（当前页面）。`method` 方法表示使用何种 HTTP 请求方法，默认方式为 `GET`，不过大多数时间我们选择 `POST` 方法，因为它把用户提交的数据包含在请求内容中，而非像 GET 一样添加在 URL 中。`novalidate` 告诉浏览器不要对表单的内容进行验证，而是交给 Flask 服务来验证。使用 `novalidate` 是可选的，我们先这样设置，这样我们可以测试服务端的验证功能。
+
+`form.hidden_tag()` 生成了一个隐藏的元素，其中包含了用于防止 CSRF 攻击的令牌信息。我们要做是确保引入这一隐藏元素，并且在 Flask 配置中定义 `SECRET_KEY` 变量，其它的都由 Flask-WTF 扩展来完成。
+
+如果你曾经写过 HTML Web 表单，你会奇怪在模板中我们没有为每个表单项加入 HTML 标签。这是因为我们的 form 对象知道如何生成 HTML 标签。我们要做的只是引入 `{{ form.<field_name>.label }}` 来插入标签名，引入 ``{{ form.<field_name>() }}` 来生成表单项。要为 HTML 标签添加属性，我们只需要把它们当成参数传入即可。例如上面的用户名和密码我们传入了 `size` 参数，用被添加到 HTML 的 `<input>` 标签属性中。同样，你的 CSS Class 或者 ID 设置也可以这样做。
+
 ## TODO Form Views (0/1.9)
 ## TODO Receiving Form Data (0/3.3)
 ## TODO Improving Field Validation (0/2.3)
