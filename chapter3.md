@@ -269,4 +269,58 @@ def login():
 
 ![validation](./images/ch03-validation.png)
 
-## TODO Generating Links (0/1.9)
+## 生成链接
+
+登录功能基本上完成了，在本章的最后我想来讨论下如何优雅的生成导航栏模板中的链接地址，以及如何进行重定向。到现在我们已经在导航栏中添加了两个链接地址了
+
+```html
+    <div>
+        Microblog:
+        <a href="/index">Home</a>
+        <a href="/login">Login</a>
+    </div>
+```
+
+登录的 view function 只通过 `redirect()` 方法跳转到主页
+
+```python
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        # ...
+        return redirect('/index')
+    # ...
+```
+
+这里有一个问题，我们把链接地址硬编码到模板文件和 python 源码两个位置，如果有一天你想要修改链接地址，就需要同时修改两个地方。
+
+要解决这一问题，Flask 提供了一个函数叫做 `url_for()`，可以根据内部映射规则生成 URL 地址。比如 `url_for('login')` 返回 `/login`，而 `url_for('index')` 返回 `/index`。`url_for()` 的参数称为 endpoint name，表示 view function 的名称。
+
+你可能会奇怪，为什么使用函数名要比直接使用 URL 好。事实上 URL 比函数名更容易被修改。而且我们后面会讲到，一些 URL 中包含有动态元素，需要将一些元素拼接到地址中生成 URL，如果直接写 URL 地址既复杂又易出错，还是让 `url_for()` 来生成这些复杂 URL 地址吧。
+
+这样，我们修改 `app/templates/base.html` 模板，使用 `url_for()` 来生成应用的 URL 地址，如下所示
+
+```html
+    <div>
+        Microblog:
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('login') }}">Login</a>
+    </div>
+```
+
+修改 `app/routes.py` 使用 `url_for()` 来完成跳转
+
+```python
+from flask import render_template, flash, redirect, url_for
+
+# ...
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        # ...
+        return redirect(url_for('index'))
+    # ...
+```
