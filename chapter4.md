@@ -74,8 +74,44 @@ from app import routes, models
 
 大部分的 Flask 扩展都和上面 `db`、`migrate` 有一样初始化语法
 
+## 数据库模型
 
-## TODO Database Models (0/1.3)
+数据库的数据将被表示成为类(class)，这种表示方法称为数据库模型(database models)。SQLAlchemy 的 ORM 层将负责把类数据和操作转换为相应的数据库的表和行。
+
+让我们先来定义用户的数据库模型。使用[WWW SQL Designer](http://ondras.zarovi.cz/sql/demo)工具，我生成了下面的用户表示意图：
+
+![users.png](images/ch04-user.png)
+
+其中 `id` 几乎在表示模型中都会出现，通常被用作主键(primary key)。库中的每个用户都被分配以唯一的 ID。大多数情况主键会由数据库自动分配，所以我们这里只需要将之标记为主键即可。
+
+`username`, `email`, `password_hash` 字段为字符串类型（数据库中称为 `VARCHAR` 类型），我们设定了它们的最大长度以优化数据库存储性能。`username` 和 `email` 不用多解释，`password_hash` 有点技巧。为了安全计，我们不应该直接把密码保存在数据库里，否则很可能被攻击而导致密码泄露。所以我们存放的是密码的哈希值，这样安全得多。后面我将详细解释，现在我们暂时跳过其中细节。
+
+设计好了用户表，我们现在可以实现代码来表示它，如下我们在 `app/models.py` 中定义了用户表
+
+```python
+from app import db
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+
+    def __repr__(self):
+        return '<User {}>'.format(self.username)    
+```
+
+`User` 类继承了 `db.Model` 基类，该基类是 Flask-SQLAlchemy 所有模型都应该继承的。在类中，我们定义了四个类成员变量，其内容是 `db.Column` 的实例，指定了列的类型，加上一些可选的配置项，表示哪些列是不允许重复的(unique)，哪些列需要加索引（indexed）以提高访问效率。
+
+里面的 `__repr__` 方法告诉 Python 如何来显示这类对象，清晰的表示有利于调试。我们可以在交互式命令行中试验一下
+
+```python
+>>> from app.models import User
+>>> u = User(username='susan', email='susan@example.com')
+>>> u
+<User susan>
+```
+
 ## TODO Creating The Migration Repository (0/0.6)
 ## TODO The First Database Migration (0/0.9)
 ## TODO Database Upgrade and Downgrade Workflow (0/0.6)
