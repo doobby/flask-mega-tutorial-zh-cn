@@ -14,7 +14,7 @@ chapter                                               | status | validation
 chapter 1: Hello, World!                              | 100%   | 0%
 chapter 2: Templates                                  | 100%   | 0%
 Chapter 3: Web Forms                                  | 100%   | 0%
-Chapter 4: Database                                   | 40%    | 0%
+Chapter 4: Database                                   | 48%    | 0%
 Chapter 5: User Logins                                | 0%     | 0%
 Chapter 6: Profile Page and Avatars                   | 0%     | 0%
 Chapter 7: Error Handling                             | 0%     | 0%

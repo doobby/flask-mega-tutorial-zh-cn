@@ -80,7 +80,7 @@ from app import routes, models
 
 让我们先来定义用户的数据库模型。使用[WWW SQL Designer](http://ondras.zarovi.cz/sql/demo)工具，我生成了下面的用户表示意图：
 
-![users.png](images/ch04-user.png)
+![users.png](images/ch04-users.png)
 
 其中 `id` 几乎在表示模型中都会出现，通常被用作主键(primary key)。库中的每个用户都被分配以唯一的 ID。大多数情况主键会由数据库自动分配，所以我们这里只需要将之标记为主键即可。
 
@@ -112,7 +112,30 @@ class User(db.Model):
 <User susan>
 ```
 
-## TODO Creating The Migration Repository (0/0.6)
+## 创建迁移仓库 (Migration Repository)
+
+上一节中创建了数据库表结构(schema)的初始版本。不过随着应用的演进，我们很可能需要修改这一结构，比如添加一列，或者修改、删除一些内容。Alembic (Flask-Migrate 扩展迁移框架）可以帮助我们完成这些修改，而不需要完全重新创建整个库。
+
+要完成这个复杂的工作，Alembic 需要维护一个迁移仓库 (Migration Repository)，这是一个存储有迁移脚本的目录。每次我们对数据库结构进行修改时，就有一个用于完成迁移功能的脚本在这个目录下生成。我们需要顺序执行这些脚本来完成迁移工作。
+
+Flask-Migrate 扩展了 `flask` 子命令（记得之前的 `flask run` 命令吗？）。`flask db` 子命令用于调用 Flask-Migrate 进行数据库迁移。初次创建库时，我们需要同时用 `flask db init` 创建这个迁移库
+
+```bash
+(venv) $ flask db init
+  Creating directory /home/miguel/microblog/migrations ... done
+  Creating directory /home/miguel/microblog/migrations/versions ... done
+  Generating /home/miguel/microblog/migrations/alembic.ini ... done
+  Generating /home/miguel/microblog/migrations/env.py ... done
+  Generating /home/miguel/microblog/migrations/README ... done
+  Generating /home/miguel/microblog/migrations/script.py.mako ... done
+  Please edit configuration/connection/logging settings in
+  '/home/miguel/microblog/migrations/alembic.ini' before proceeding.
+```
+
+记住 `flask` 命令依赖于 `FLASK_APP` 环境变量，所以在此之前我们需要设定 `FLASK_APP=microblog.py` （参见[第一章](chapter1.md)）
+
+正确执行后将生成一个 `migrations` 目录，其中包含有一些文件和有版本号标识的子目录。这些文件从现在起也是我们工程的一部分，需要将它们加入到我们的版本管理系统中。
+
 ## TODO The First Database Migration (0/0.9)
 ## TODO Database Upgrade and Downgrade Workflow (0/0.6)
 ## TODO Database Relationships (0/1.9)
