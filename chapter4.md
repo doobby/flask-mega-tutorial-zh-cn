@@ -167,7 +167,84 @@ INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
 
 注意 Flask-SQLAlchemy 使用了 snake case （蛇形命令法）来命名表名。因此 `User` 类对应的表名为 `user`。如果数据库模型名为 `AddressAndPone`，则生成的表名应该为 `address_and_phone`。你可以自由选择生成的表名，可以在模型类中添加 `__tablename__` 属性，将之设置为你想要的表名。
 
-## TODO Database Upgrade and Downgrade Workflow (0/0.6)
+## 数据库的升级与回退流程
+
+尽管我们的应用现在还只是个雏形，现在讨论数据库迁移升级策略并不显早。假设你的应用在开发环境上运行，同时在线上还部署了一份生产环境在使用。
+
+如果在下一版本中你对你的数据库模型做了一些修改，比如添加了一个新的表结构。若是没有迁移策略来帮助我们修改数据库表结构，那么你就得手动对本地开发环境和线上生产环境进行维护，那将会是很大的工作量。
+
+但是如果有了数据库迁移支持，在你修改了数据库模型后，你只需要生成一个新的迁移脚本(`flask db migrate`)，可以研究下代码看看这个自动生成的脚本确实做了我们想要做的事情，然后对我们开发环境使用这个脚本（`flask db upgrade`）就可以了。此外我们会把这个迁移脚本加入到版本控制系统中和源码一起保存。
+
+当你准备好为线上生产环境发布一个盯死时，你需要做的是确定你的应用的迁移更新版本，然后运行 `flask db upgrade`。Alembic 会自动监测生产环境数据库状态，运行所有的迁移升级脚本来确保它升级到是新版本的数据库表结构。
+
+我之前已经提到过，使用 `flask db downgrade` 命令可以撤消升级迁移。若有回退的需要，这一功能对生产环境至关重要。很可能你设计了新的表结构，升级后发现是有问题的，这样你可以回退它，然后删除升级迁移脚本，重新设计你的表结构模型并升级之。
+
+## 数据库关系 (Relationships)
+
+关系型数据库非常适合表示数据之间的关系。比如我们的用户信息(`users`)和博客(`posts`)之间就有关联关系。最高效的方式是设计一个关联关系表，把两者连接在一起。
+
+一旦在用户和博客之间建立了关联关系，数据库就能自动处理这条连接。最基本的功能是给你一篇博客，你就能得知它的作者是谁。较复杂一点的应用场景是给你一个用户，我们可以查找同所有他写的博客。Flask-SQLAlchemy 同时支持这两种查询方式。
+
+这我们扩展数据库，来存储博客信息以及与用户的关联关系。下面是我们新设计的 `blogs` 表
+
+![users-posts](images/ch04-users-posts.png)
+
+`posts` 表中包含了主键 `id`，`body` 存储博客内容，`timestamp` 时间戳。此外还有一个额外的 `user_id` 字段，与作者相关联。因为所有的用户都有一个唯一的主键 `id`，我们让 `user_id` 指向这个用户 `id`，这种指向主键的关联字段称为 _foreign key_ （外键）。数据库的设计结构中显示了外键链接到了另一个表的主键。这种关系称为一对多关系 (one-to-many)，其中一个用户可能有多个博客。
+
+我们修改 `app/models.py` 添加了新的 `Post` 数据库模型
+
+```python
+from datetime import datetime
+from app import db
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+    posts = db.relationship('Post', backref='author', lazy='dynamic')
+
+    def __repr__(self):
+        return '<User {}>'.format(self.username)
+
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(140))
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    def __repr__(self):
+        return '<Post {}>'.format(self.body)
+```
+
+新的 `Post` 类表示用户书写的博客。`timestamp` 需要被索引，因为我们需要按时间来排序博客，同时我们为它指定了一个默认值生成函数 `datetime.utcnow` （注意这里是函数，没有 `()`），在没有提供值时，由 SQLAlchemy 来调用这个函数生成一个默认值。通常来说，我们可以使用 UTC 时间来避免不同时区的处理出现问题。UTC 时间在展示时可以被转换为当地时间。
+
+`user_id` 初始化成 `user.id` 的外键。在这种引用关系下，`user` 表示数据库的表名而不是模型的类名称（这在设计上有些不一致，因为有的 SQLAlchemy 函数如 `db.relationship()` 中使用的模型类名称，模型类名称一般以大写开头，而表名则是小写的蛇形命名）。
+
+`User` 类中新加了一个 `post` 字段，被使用 `db.relationship` 来初始化。这并不是个真正的数据库字段，而是更高阶的逻辑视图，用来表示用户和博客表之间的关联。在一对多的关系中，`db.relationship` 需要被定义在 "一" 的那一边，这样通过 `User` 可以容易地访问与之关联和多个博客。例如，如果我的用户存储在 `u` 中，那么 `u.posts` 会自动运行一个 SQL 查询来返回与之关联的所有博客。`db.relationship` 的第一个参数是与之关联的那个目标模型类名称（可以是类本身，或是类名，用类名可以避免类未定义的错误）。`backref` 参数定义了字段名，返回的关联结果中将添加一个新的字段表示主表的原始记录，即 `post.author` 记录了当前博客的作者记录。`lazy` 参数定义了如何进行关联关系查询，这个我们在后面具体说明，现在我们暂时跳过它。
+
+现在我更新的数据库模型，需要生成一个新的迁移脚本
+
+```bash
+(venv) $ flask db migrate -m "posts table"
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'post'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_post_timestamp' on '['timestamp']'
+  Generating /home/miguel/microblog/migrations/versions/780739b227a7_posts_table.py ... done
+```
+
+并把脚本应用到需要升级的数据库上
+
+```bash
+(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, posts table
+```
+
+记着把升级迁移脚本加到你的版本控制中去。
+
 ## TODO Database Relationships (0/1.9)
 ## TODO Play Time (0/2.2)
 ## TODO Shell Context (0/1.4)
