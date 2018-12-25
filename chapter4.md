@@ -245,6 +245,162 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 
 记着把升级迁移脚本加到你的版本控制中去。
 
-## TODO Database Relationships (0/1.9)
-## TODO Play Time (0/2.2)
-## TODO Shell Context (0/1.4)
+## 游戏时间
+
+我们已经花了很长时间来定义数据库了，但还没有真正涉及使用，因为我们的应用暂还用不着。让我们先通过 Python 解释器来试用一个这些数据库表。在虚拟环境中执行 `python` 进入交互式命令行，然后导入数据库的实例和模型
+
+```python
+>>> from app import db
+>>> from app.models import User, Post
+```
+
+先来定义一个用户
+
+```python
+>>> u = User(username='john', email='john@example.com')
+>>> db.session.add(u)
+>>> db.session.commit()
+```
+
+对数据库的修改在会话 (session) 的上下文 (context) 中完成，会话可以通过 `db.session` 来访问。会话中可以一次性修改多处内容，最后统一调用 `db.session.commit()` 来将修改原子性的写入。如果会话中出现了错误，可以调用 `db.session.rollback()` 来回滚所有的修改。一定要记住只有调用 `db.session.commit()` 后修改才真正的生效（之所以要显示调用 commit 是为了保证数据库不会停留在一个中间状态）
+
+再来定义一个用户
+
+```python
+>>> u = User(username='susan', email='susan@example.com')
+>>> db.session.add(u)
+>>> db.session.commit()
+```
+
+可以列出所有用户
+
+```python
+>>> users = User.query.all()
+>>> users
+[<User john>, <User susan>]
+>>> for u in users:
+...     print(u.id, u.username)
+...
+1 john
+2 susan
+```
+
+所有的数据库模型（类）都有一个 `query` 属性，指向了数据库的查询对象。最基本的查询语法是用 `all()` 列出所有的对象。注意 `id` 分别是 1 和 2，它是自动增长的。
+
+如果已知用户 `id` 我们可以直接查询该用户信息
+
+```python
+>>> u = User.query.get(1)
+>>> u
+<User john>
+```
+
+再来我们添加一个博客
+
+```python
+>>> u = User.query.get(1)
+>>> p = Post(body='my first post!', author=u)
+>>> db.session.add(p)
+>>> db.session.commit()
+```
+
+我们不需要来为 `timestamp` 传值，它会自动生成一个默认值（参见 `posts` 的定义）。那么 `user_id` 怎么填呢？回忆一下之前我们为 `User` 类中添加的 `db.relationship` 关系，它使得 User 中多了一个 `posts` 属性，同时 post 中也多了一个 `author` 来反向引用用户。所以这里我们传入用户对象 `u` 给 `author` 虚拟字段，而不需要显示的传入 `user_id`。SQLAlchemy 在这方面做得很棒，从一个更高阶的角度抽象了关联关系，而不需要我们手动来处理关联和外键。
+
+来演示一下会话的更多查询方法
+
+```python
+>>> # get all posts written by a user
+>>> u = User.query.get(1)
+>>> u
+<User john>
+>>> posts = u.posts.all()
+>>> posts
+[<Post my first post!>]
+
+>>> # same, but with a user that has no posts
+>>> u = User.query.get(2)
+>>> u
+<User susan>
+>>> u.posts.all()
+[]
+
+>>> # print post author and body for all posts 
+>>> posts = Post.query.all()
+>>> for p in posts:
+...     print(p.id, p.author.username, p.body)
+...
+1 john my first post!
+
+# get all users in reverse alphabetical order
+>>> User.query.order_by(User.username.desc()).all()
+[<User susan>, <User john>]
+```
+
+[Flask-SQLAlchemy](http://packages.python.org/Flask-SQLAlchemy/index.html) 文档中详细解说了查询数据库的更多语法和参数。
+
+最后，我们删除上面创建的测试用户和博客，以便下一章真正使用数据库
+
+```python
+>>> users = User.query.all()
+>>> for u in users:
+...     db.session.delete(u)
+...
+>>> posts = Post.query.all()
+>>> for p in posts:
+...     db.session.delete(p)
+...
+>>> db.session.commit()
+```
+
+## Python Shell 的 上下文 (Context)
+
+上一节中我们启动 Python 解释器后第一步就是导入一些类和实例
+
+```python
+>>> from app import db
+>>> from app.models import User, Post
+```
+
+因为我们需要经常性的启动 Python Shell 来做一些验证，每次手动输入这些导入语句就太麻烦了。好在有 `flask shell` 子命令，这是仅次于 `run` 的第二重要的子命令。`shell` 命令启动了一个加载了应用上下文的 Python 解释器，如下所示
+
+```python
+(venv) $ python
+>>> app
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'app' is not defined
+>>>
+
+(venv) $ flask shell
+>>> app
+<Flask 'app'>
+```
+
+普通的 Python 解释器需要我们显示的导入 `app`，而在 `flask shell` 会预加载这个应用实例。除了 `app` 之外，你还可以配置 shell 的上下文来指定预加载的符号内容。
+
+比如我们可以在 `microblog.py` 中创建一个 shell 上下文，为 `flask shell` 加入数据库实例以及模型定义
+
+```python
+from app import app, db
+from app.models import User, Post
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'User': User, 'Post': Post}
+```
+
+这里的 `app.shell_context_processor` 装饰器注册了 shell 上下文配置函数。当 `flask shell` 执行时，它用调用这些注册的函数来生成 shell 会话。我们返回的字典的键正是上下文中变量名称。
+
+注册过 shell 上下文处理函数后，我们可以直接在 flask shell 中使用这些变量
+
+```python
+(venv) $ flask shell
+>>> db
+<SQLAlchemy engine=sqlite:////Users/migu7781/Documents/dev/flask/microblog2/app.db>
+>>> User
+<class 'app.models.User'>
+>>> Post
+<class 'app.models.Post'>
+```
+
+如果你在访问时遇到了 `NameError` 异常，那么表示 `make_shell_context()` 没有生效。最可能的问题是你没有设置 `FLASK_APP=microblog.py` 环境变量（参见[第一章](chapter1.md)）。如果你总是不小心忘记设置环境变量，建议你还是按第一章的方法，在 `.flaskenv` 文件中配置该变量，以避免不必要的记忆内容。
