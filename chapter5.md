@@ -276,4 +276,116 @@ def index():
 
 这样重启服务后，访问 http://localhost:5000/ 或 http://localhost:5000/index 将被重定向到登录页面，输入正确的用户名密码登录后又重新回到 index 页面，上面将显示一条欢迎信息。
 
-## TODO User Registration (0/4.9)
+## 用户注册
+
+本章最后，我将编写一个用户注册页面，允许自行注册新用户。首先在 `app/forms.py` 中添加一个新的注册表单类
+
+```python
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from app.models import User
+
+# ...
+
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    password2 = PasswordField(
+        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different username.')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different email address.')
+```
+
+里面关于检验有一些有趣的细节。首先 `email` 字段在 `DataRequired()` 之后多了一个 `Email()` 检验。这是 WTForms 提供用来检查 email 格式是否合法的校验器。
+
+由于这是一个注册表单，习惯上会让用户输入两遍密码来加以确认（如上面的 `password` 和 `password2`）。第二个密码加入了额外的检验函数 `EqualTo` 来检查是否与第一次输入的密码一样。
+
+同时还还加入了两个方法 `validate_username()` 和 `validate_email()`。当你在表单类中添加名如 `validate_<field_name>` 的方法时，WTForms 将会自动将之作为自定义检验方法来对相应的字段进行检查。在这个例子中，我想确保用户名和 e-mail 地址没有被注册过（通过过滤 `User` 表，确保没有同名记录）。如果发现同名记录，则抛出 `ValidationError` 异常，其中描述了具体的出错信息，并将在页面相应表单项位置反馈给用户。
+
+要把这个表单显示出来，我还需要创建一个 HTML 模板。这个模板与之前的登录模板很像，我们把它保存在 `app/templates/register.html` 文件中
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Register</h1>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}<br>
+            {% for error in form.username.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=64) }}<br>
+            {% for error in form.email.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}<br>
+            {% for error in form.password.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password2.label }}<br>
+            {{ form.password2(size=32) }}<br>
+            {% for error in form.password2.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+我们可以在登录页面模板上添加一个注册的链接 (`app/templates/login.html`) 以方便注册
+
+```html
+   <p>New User? <a href="{{ url_for('register') }}">Click to Register!</a></p>
+```
+
+最后，我们编写一个 view function 来处理注册事件。注册函数 `regisre()` 添加到 `app/routes.py` 中
+
+```python
+from app import db
+from app.forms import RegistrationForm
+
+# ...
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+```
+
+上面的代码几乎不需要多做解释。首先确保用户没有登录，还后像登录一样的逻辑来进行处理，在 `if validte_on_submit()` 条件分支中创建一个新的用户（用户名、E-mail、密码）并写入数据库，然后跳转到登录页面让新用户登录。
+
+![register-form](./images/ch05-register-form.png)
+
+经过上面的改动，用户可以自行在应用中创建账号，并登入或登出应用。确保你试过了所有提到的表单验证函数，以更好理解它们的工作机制。我将在后面的章节改进用户授权的一些功能，比如允许用户重置密码。不过现在，我们可以继续来完成应用的其它方面。
