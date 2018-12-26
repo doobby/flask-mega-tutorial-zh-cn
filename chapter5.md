@@ -78,7 +78,26 @@ login = LoginManager(app)
 # ...
 ```
 
-## TODO Preparing The User Model for Flask-Login (0/0.8)
+## 准备 User 模型
+
+Flask-Login 扩展需要使用 User 数据库模型，要求其中务必有相应的属性和方法。这种设计很好，因为我们只需要向 User 类中添加元素不需要其它的改动，而且这样 Flask-Login 能随着 User 在数据库上进行操作。
+
+需要的四个元素如下所列
+* `is_authenticated`: 布尔类型属性值，如果用户认识成功，则为 `True`，否则为 `False`
+* `is_active`: 布尔类型属性值，如果用户账户激活，则为 `True`，否则为 `False`
+* `is_anonymous`: 布尔类型属性值，如果是普通类型用户，则为 `True`，否则为 `False` (特殊用户或匿名用户)
+* `get_id()`: 方法，每个用户返回不同的标识字符串（Python2 中返回 `unicode` 类型）
+
+实现这四部分内容不难，不过因为这部分比较通用，Flask-Login 提供了一个混合类(mixin class) `UserMixin`，其中包含了一个对大部分用户模型都普适的实现。我们只需要让我们的 `User` 类继承它即可。如下 `app/models.py`所示
+
+```python
+# ...
+from flask_login import UserMixin
+
+class User(UserMixin, db.Model):
+    # ...
+```
+
 ## TODO User Loader Function (0/0.7)
 ## TODO Logging Users In (0/1.9)
 ## TODO Logging Users Out (0/1.2)
