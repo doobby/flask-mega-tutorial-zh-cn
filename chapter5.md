@@ -98,7 +98,23 @@ class User(UserMixin, db.Model):
     # ...
 ```
 
-## TODO User Loader Function (0/0.7)
+## 用户加载函数
+
+Flask-Login 通过用户 ID 来跟踪用户的登录状态，该状态保存于 user session 中，其中保存了登录的用户信息。每次登录用户访问一个新的页面，Flask-Login 都从会话中取得用户 ID 信息，将之加载到 user session 对象中。
+
+因为 Flask-Login 不会与数据库交互。它需要应用来加载相应的 User 内容。因此我们需要为之配置一个用户加载函数，Flask-Login 传入用户 ID 来查询用户信息。现在我们把加载函数添加到 `app/modules.py` 中
+
+```python
+from app import login
+# ...
+
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
+```
+
+我们定义了 `load_user` 函数，并使用 Flask-Login 提供的 `@login.user_loader` 装饰器来注册为系统的用户加载函数。传入的 ID 按 Flask-Login 规定是一个字符串，我们需要将之转换为整型，来查询数据库用户表。
+
 ## TODO Logging Users In (0/1.9)
 ## TODO Logging Users Out (0/1.2)
 ## TODO Requiring Users to Login (0/2.6)
