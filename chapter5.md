@@ -115,7 +115,42 @@ def load_user(id):
 
 我们定义了 `load_user` 函数，并使用 Flask-Login 提供的 `@login.user_loader` 装饰器来注册为系统的用户加载函数。传入的 ID 按 Flask-Login 规定是一个字符串，我们需要将之转换为整型，来查询数据库用户表。
 
-## TODO Logging Users In (0/1.9)
+## 用户登入
+
+让我们先来回忆登录函数，之前我们的登录操作是假的，仅仅调用 `flask()` 显示了一条信息。现在我们需要使用 User 数据库来保存和验证用户信息，完成真正的登录函数逻辑(如下 `app/routes.py` 所示 
+
+```python
+# ...
+from flask_login import current_user, login_user
+from app.models import User
+
+# ...
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for('index'))
+    return render_template('login.html', title='Sign In', form=form)
+```
+
+`login` 函数的前两行处理一种特殊的场景：已经登录的用户再次访问 `/login` URL，显然不需要再次登录，因此我们禁止这种操作。`current_user` 变量来自于 `flask_login` 模块，可以在处理过程任何地方被访，表示当前请求客户端对应的用户对象。用户对象可能由数据库中加载（上节中提到的用户加载函数），或者对于未登录用户返回特殊的匿名用户对象。记得我们为 `User` 类中加入的四个成员吗？其中就包含这个 `is_authenticated` 布尔值，表示用户是否已经登入。对于已经登录的用户，我们直接跳转到 index 页面。
+
+在我们之前的 `flask()` 的位置，我们添加了真正的登录检查。首先从数据库中查找用户信息（根据 `username` 进行过滤 `filter_by`，找出相同用户名的记录），返回只可能是零个或一个结果，我们调用 `first()`，如果有命中，则返回用户，否则返回 `None`。在[第四章](chapter4.md)中我们使用 `all()` 方法返回所有结果，这里我们使用 `frst()` 返回唯一结果。
+
+如果我们查到了相应的用户，接下来可以检查表单提交的密码。通过 User 中的 `check_password` 方法来比较数据库中密码哈希与表单输入密码是否匹配。可能的错误有两种：用户名不存在，或者密码不符。无论何种情况，我们都返回同样的错误信息，并将页面重定向到登录页面，让用户重试登录。
+
+如果用户名和密码都正确，我们将调用 `login_user()` 函数（由 Flask-Login 扩展提供）。该函数记录用户为已登录状态，保证后续的页面访问能够正确获取到 `current_user` 用户信息。
+
+完成登录后，我们将重定向到 index 页面。
+
 ## TODO Logging Users Out (0/1.2)
 ## TODO Requiring Users to Login (0/2.6)
 ## TODO Showing The Logged In User in Templates (0/1.4)
