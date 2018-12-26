@@ -57,7 +57,27 @@ False
 True
 ```
 
-## TODO Introduction to Flask-Login (0/0.8)
+## Flask-Login 简介
+
+在本章中我们将使用到一个非常流行的 Flask 扩展 [Flask-Login](https://flask-login.readthedocs.io/)。该扩展用于管理用户登录状态，以便记录用户登录信息并在不同的页面之间进行跳转。此外，还提供了 “记住登录状态” 的功能，即使关闭浏览器，服务也能保证用户的登录状态。要继续后面的章节，我们先要在虚拟环境中安装 `Flask-Login` 扩展
+
+```bash
+(venv) $ pip install flask-login
+```
+
+和其它扩展一样，Flask-Login 也需要在应用 `app` 实例化后进行初始化，如下 `app/__init__.py` 局部修改所示
+
+```python
+# ...
+from flask_login import LoginManager
+
+app = Flask(__name__)
+# ...
+login = LoginManager(app)
+
+# ...
+```
+
 ## TODO Preparing The User Model for Flask-Login (0/0.8)
 ## TODO User Loader Function (0/0.7)
 ## TODO Logging Users In (0/1.9)
