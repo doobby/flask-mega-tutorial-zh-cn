@@ -183,6 +183,62 @@ def logout():
 
 `is_anonymous` 属性是 Flask-Login 通过 `UserMixin` 类加入到用户模型中的四个元素之一。如果为 `True` 表明用户尚未登录。
 
-## TODO Requiring Users to Login (0/2.6)
+## 强制用户登录
+
+Flask-Login 提供了一个有用的功能，要求用户在访问页面时必须是已登录状态。如果未登录用户访问一个受保护页面，Flask-Login 将自动把用户重定向到登录页面，并在成功登录时跳转到之前想访问的页面。
+
+要使用这一功能，Flask-Login 需要知道登录页面的地址，可以在 `app/__init__.py` 中加入
+
+```python
+# ...
+login = LoginManager(app)
+login.login_view = 'login'
+```
+
+上面的 `'login'` 字符串表示登录 view 函数的函数名（即 `url_for()` 生成具体 URL 的函数名）
+
+Flask-Login 受保护页面需要用 `@login_required` 来装饰。我们把这个装饰器放在 `@app.route` 之后，未登录用户不允许访问该函数。如下所示，我们在 `app/routes.py` 中限制了 '/index' 的访问
+
+```python
+from flask_login import login_required
+
+@app.route('/')
+@app.route('/index')
+@login_required
+def index():
+    # ...
+```
+
+此外，我们需要实现成功登录后跳转回用户之前要访问的页面这一功能。当一个未登录用户访问受保护页面，`@login_required` 装饰器将用户重定向到 `/login` 页面 ，同时还会记录当前的访问信息。例如 `@login_required` 阻止未登录用户访问 `/index` 页面，并重定向到 '/login' 页面，同时在 URL 后添加了一个参数 `/login?next=/index`。其中的 `next` 参数记录了原本想要访问的地址，这样在成功登录后可以跳转到之前的页面了。
+
+下面如何生成和处理 `next` 字段的代码片断（在 `app/routes.py` 中）
+
+```python
+from flask import request
+from werkzeug.urls import url_parse
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # ...
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('index')
+        return redirect(next_page)
+    # ...
+```
+
+在调用 `login_user()` 表示用户登录成功后，我们获取了 URL 中的 `next` 参数。Flask 提供了一个 `request` 变量，可以从中获取客户端提交到服务器的请求的各种参数。这里 `request.args` 将请求参数以字典形式保存在其中。根据实际情况，在成功登录后我们有三种跳转方式：
+* 如果登录 URL 中不包含 `next` 参数，则跳转到默认的 `index` 页面
+* 如果 URL 中包含有 `next` 参数，并且其内容为一个相对路径（即不包含主机信息），则跳转到该页面
+* 如果 `next` 值为完整 URL 路径，将跳转到 index 页面。
+
+前两种情况不用多解释。第三种跳转主要出于安全考虑，以防一个骇客在 `next` 中插入了一个恶意网址，我们需要保证跳转仅在当前主机服务上。要判断一个 URL 是相对地址还是绝对地址，我这里使用 Werkzeug 的 `url_parse()` 函数来进行解析，并使用 `netloc` 域是否存在作为判断标准。
+
 ## TODO Showing The Logged In User in Templates (0/1.4)
 ## TODO User Registration (0/4.9)
