@@ -240,5 +240,40 @@ def login():
 
 前两种情况不用多解释。第三种跳转主要出于安全考虑，以防一个骇客在 `next` 中插入了一个恶意网址，我们需要保证跳转仅在当前主机服务上。要判断一个 URL 是相对地址还是绝对地址，我这里使用 Werkzeug 的 `url_parse()` 函数来进行解析，并使用 `netloc` 域是否存在作为判断标准。
 
-## TODO Showing The Logged In User in Templates (0/1.4)
+## 显示已经登录用户
+
+在[第二章](chapter2.md)中，我们创建了假的用户信息来设计和实现我们的主页。现在我们可以把它换成真的用户系统了，当前用户用 `current_user` 来表示。如下是修改后的 `app/templates/index.html` 模板
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Hi, {{ current_user.username }}!</h1>
+    {% for post in posts %}
+    <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+    {% endfor %}
+{% endblock %}
+```
+
+我们不需要再为 index 的渲染提供 `user`，因为模板中直接访问了 `current_user` (`app/routes.py` 代码如下所示)
+
+```python
+@app.route('/')
+@app.route('/index')
+def index():
+    # ...
+    return render_template("index.html", title='Home Page', posts=posts)
+```
+
+到这里我们可以验证登入登出功能，因为还没有实现注册功能，我们只能手动从 flask shell 中来添加用户
+
+```bash
+>>> u = User(username='susan', email='susan@example.com')
+>>> u.set_password('cat')
+>>> db.session.add(u)
+>>> db.session.commit()
+```
+
+这样重启服务后，访问 http://localhost:5000/ 或 http://localhost:5000/index 将被重定向到登录页面，输入正确的用户名密码登录后又重新回到 index 页面，上面将显示一条欢迎信息。
+
 ## TODO User Registration (0/4.9)
