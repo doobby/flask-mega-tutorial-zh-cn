@@ -151,7 +151,38 @@ def login():
 
 完成登录后，我们将重定向到 index 页面。
 
-## TODO Logging Users Out (0/1.2)
+## 用户登出
+
+有时候还需要提供一个用户退出登录的功能。Flask-Login 扩展提供了 `logout_user()` 函数，我们为 `app/routes.py` 添加一个 logout view 函数
+
+```python
+# ...
+from flask_login import logout_user
+
+# ...
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+```
+
+此外我们还需要在导航栏为已经登录的用户添加一个登出链接，下面是修改后的 `app/templates/base.html` 模板
+
+```html
+<div>
+        Microblog:
+        <a href="{{ url_for('index') }}">Home</a>
+        {% if current_user.is_anonymous %}
+        <a href="{{ url_for('login') }}">Login</a>
+        {% else %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% endif %}
+</div>
+```
+
+`is_anonymous` 属性是 Flask-Login 通过 `UserMixin` 类加入到用户模型中的四个元素之一。如果为 `True` 表明用户尚未登录。
+
 ## TODO Requiring Users to Login (0/2.6)
 ## TODO Showing The Logged In User in Templates (0/1.4)
 ## TODO User Registration (0/4.9)
