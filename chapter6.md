@@ -57,7 +57,7 @@ def user(username):
 
 用 `url_for()` 来生成到具体用户信息页的链接地址。因为用户信息页的 view function 中包含了动态参数，`url_for()` 函数接收 `username` 做为参数，我们传入了 Flask-login 的 `current_user` 参数来生成正确的 URL。
 
-![user-profile](ch06-user-profile.png)
+![user-profile](./images/ch06-user-profile.png)
 
 试着运行一下我们的程序。点击导航栏中的 `Profile` 链接，跳转到用户信息页。现在没有到其它用户信息页的链接，如果想要访问其他用户的信息页，我们可以直接在浏览器地址栏中手动输入 URL 地址。比如要访问 "john" 用户的信息页（用户已存在），可以输入地址 http://localhost:5000/user/john 来查看。
 
