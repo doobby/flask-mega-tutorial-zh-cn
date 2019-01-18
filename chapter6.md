@@ -61,7 +61,7 @@ def user(username):
 
 试着运行一下我们的程序。点击导航栏中的 `Profile` 链接，跳转到用户信息页。现在没有到其它用户信息页的链接，如果想要访问其他用户的信息页，我们可以直接在浏览器地址栏中手动输入 URL 地址。比如要访问 "john" 用户的信息页（用户已存在），可以输入地址 http://localhost:5000/user/john 来查看。
 
-## TODO Avatars (0/2.6)
+## Avatars
 
 你们可能会认为这个信息页太简陋了，的确如此。要让它更有意思，我准备加上 avatar 图标。但我不准备在服务器上上传和保存一堆头像图片，而是使用 [Gravatar](http://gravatar.com/) 来为所有用户提供图标服务。
 
@@ -152,7 +152,42 @@ class User(UserMixin, db.Model):
 
 ![avatar](images/ch06-avatars.png)
 
-## TODO Using Jinja2 Sub-Templates (0/0.8)
+## 使用 Jinja2 子模板 (sub-templates)
+
+用户信息页中显示了用户的全部博客以及用户的头像。现在我想以相同的布局来显示博客内容。最直接的方式是我们把模板内容拷贝粘贴到 post 模板中，不过这可不是个好方法。如果将来我要对布局进行发动，那么需要同时对两个地方进行修改。
+
+我们来学习使用子模板来渲染一篇博客，而在 user.html 和 index.html 中直接引用这一模板。首先，我们创建单篇博客的模板 `app/templates/_post.html`，其中 `_` 前缀只是一种命名习惯，表示这个文件是子模板
+
+```jinja2
+    <table>
+        <tr valign="top">
+            <td><img src="{{ post.author.avatar(36) }}"></td>
+            <td>{{ post.author.username }} says:<br>{{ post.body }}</td>
+        </tr>
+    </table>
+```
+
+在其它模板中使用 `include` 语句来包含该子模板，例如在 `app/templates/user.html` 中作如下改动
+
+```jinja2
+{% extends "base.html" %}
+
+{% block content %}
+    <table>
+        <tr valign="top">
+            <td><img src="{{ user.avatar(128) }}"></td>
+            <td><h1>User: {{ user.username }}</h1></td>
+        </tr>
+    </table>
+    <hr>
+    {% for post in posts %}
+        {% include '_post.html' %}
+    {% endfor %}
+{% endblock %}
+```
+
+索引页 (index) 还没有完成，所以我们记得在后面也为它引用 `_post.html` 子模板
+
 ## TODO More Interesting Profiles (0/1.2)
 ## TODO Recording The Last Visit Time For a User (0/1.4)
 ## TODO Profile Editor (0/2.6)
