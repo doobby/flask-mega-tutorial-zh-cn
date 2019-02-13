@@ -188,6 +188,168 @@ class User(UserMixin, db.Model):
 
 索引页 (index) 还没有完成，所以我们记得在后面也为它引用 `_post.html` 子模板
 
-## TODO More Interesting Profiles (0/1.2)
-## TODO Recording The Last Visit Time For a User (0/1.4)
-## TODO Profile Editor (0/2.6)
+## 更多有意思的 Profile
+
+用户 Profile 页面还有一个问题：信息量太少。用户想要在这些页面上展示更多关于自己的信息，我们可以在页面上加上一段自我描述。此外，还可以记录各个用户最后一次访问该页面的时间。
+
+首先，我们为用户表（app/modules.py）添加两个新的字段来保存这些信息
+
+```python
+class User(UserMixin, db.Model):
+    # ...
+    about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+```
+
+每次修改表结构后，我们都需要进行一次数据库迁移。在 [第四章](chapter4.md) 中我们解释了如何配置数据库迁移脚本来追踪数据库的变更。现在我们新添加了两个字段，首先我们需要生成迁移脚本
+
+
+```bash
+(venv) $ flask db migrate -m "new fields in user model"
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added column 'user.about_me'
+INFO  [alembic.autogenerate.compare] Detected added column 'user.last_seen'
+  Generating /home/miguel/microblog/migrations/versions/37f06a334dbf_new_fields_in_user_model.py ... done
+```
+
+`migrate` 命令的输出结果提示我们为用户表添加了两个新的字段（`about_me` 和 `last_seen`），接下来我们运行迁移脚本来更新数据库
+
+```bash
+(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 780739b227a7 -> 37f06a334dbf, new fields in user model
+```
+
+希望你们也意识到使用数据库迁移框架的重要性。数据库中的所有用户记录还在库中，迁移框架保证了升级过程不会损坏原有数据。
+
+接下来，我们为 user profile 模板添加这两个字段（app/templates/user.html）
+
+```jinja2
+{% extends "base.html" %}
+
+{% block content %}
+    <table>
+        <tr valign="top">
+            <td><img src="{{ user.avatar(128) }}"></td>
+            <td>
+                <h1>User: {{ user.username }}</h1>
+                {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
+                {% if user.last_seen %}<p>Last seen on: {{ user.last_seen }}</p>{% endif %}
+            </td>
+        </tr>
+    </table>
+    ...
+{% endblock %}
+```
+
+注意，我在这两个字段外面加上了条件判断，只有在有值的时候都会被渲染。因为现在我们的用户信息中这两个字段都是空的，所以不会被渲染。
+
+## 记录用户的最后访问时间
+
+我们先来实现最后访问时间记录。在每次服务收到请求后，我们就把当前时间写入到相应用户的记录中。
+
+要为所有可能用到的 view function 添加一个预处理函数，来设置这个字段显然不现实。在 Web 应用中，收到请求，到调用具体的 view function 之间触发一个预处理操作是很普遍的需求。Flask 提供了一种机制，如下 app/routes.py 修改所示
+
+```python
+from datetime import datetime
+
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
+```
+
+Flask 提供 `@before_request` 所装饰的函数会在 view function 之前被调用。这个特性十分的有用，这样我们可以统一为所有 view function 添加预处理操作。实现中，我们检查当前用户 `current_user` 是否已经登录，如果已经登录则更新用户的 `last_seen` 字段为当前时间。之前我已经提到过，web 服务应用需要使用统一的时间，一般我们用使用 UTC 时间。在系统中使用本地时间可能不是个好的选择，因为这会使数据库依赖于你的位置。修改后我们提交了数据库会话，保证修改被真正写入数据库。我们没有显式调用 `db.session.add()` 语句，而是直接修改 `current_user` 成员变量，Flask-Login 会自动调用数据库接口来加载和写入修改，因此我们不需要重新添加用户。
+
+修改之后，我们的应用页面上将会出现一行 "Last seen on" 的时间，非常接近当前时间。当你浏览其它页面并再次回来，你会发现时间确实被更新了。
+
+事实上，我们以 UTC 方式记录时间，页面上显示的也是 UTC 时间。时间的格式可能不是你想要的，因为我们使用了 Python datetime 默认的内部表示方式。不过我暂时不准备关注这两处细节，我们将在更后面的章节专门来处理日期和时间的问题。
+
+![last-seen](./images/ch06-last-seen.png)
+
+## Profile 编辑器
+
+我们还需要为用户提供一个表单，这样他们就可以自己输入和修改用户信息，如用户名和描述签名（`about_me`）。首先我们来实现一个表单类（app/forms.py)
+
+```python
+from wtforms import StringField, TextAreaField, SubmitField
+from wtforms.validators import DataRequired, Length
+
+# ...
+
+class EditProfileForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
+    submit = SubmitField('Submit')
+```
+
+这里我们使用了一个新的检验器。对 "About" 字段，我使用了 `TextAreaField`，这是一个多行的输入框。我们使用 `Length` 来限定其长度在 0 到 140 字符之间，这正是我们在数据库中预留的空间大小。
+
+表单的模板如 app/templates/edit_profile.html 所示
+
+```jinja2
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Edit Profile</h1>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}<br>
+            {% for error in form.username.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.about_me.label }}<br>
+            {{ form.about_me(cols=50, rows=4) }}<br>
+            {% for error in form.about_me.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
+```
+
+还需要修改 app/routes.py 把表单处理流程串起来
+
+```python
+from app.forms import EditProfileForm
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.about_me = form.about_me.data
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('edit_profile'))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.about_me.data = current_user.about_me
+    return render_template('edit_profile.html', title='Edit Profile',
+                           form=form)
+```
+
+view function 与之前的表单处理略有不同。如果 `validate_on_submit()` 返回 `True`，我们把提交的信息更新到 user 对象中，并写入到数据库。浏览器 `GET` 操作时，我们渲染出表单；如果是 `POST` 请求，则需要考虑是否有字段非法，分两种情况来处理。每一次 `GET` 访问时，我们读取数据库的用户信息渲染成表单，而 `POST` 请求时，则反过来更新数据库的字段。如果检验不过，WTForms 会自动处理异常信息，不需要我们做额外的操作。因此，我们有两个分支，判断 `request.method`，分别处理 `GET` 请求和 `POST` 验证失败的情况。
+
+![edit-profile](./images/ch06-edit-profile.png)
+
+为了让用户更方便地访问 profile 编辑页面，我们在导航栏中加入链接，如下所示对 app/templates/user.html 模板进行修改
+
+```jinja2
+                {% if user == current_user %}
+                <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                {% endif %}
+```
+
+我们巧妙的通过条件判断来确保用户只能编辑自己的 profile，在他人的页面中将无法看到这个链接。
+
+![user-profile-link](./images/ch06-user-profile-link.png)
