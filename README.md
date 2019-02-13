@@ -17,7 +17,7 @@ Chapter 3: Web Forms                                  | 100%   | 0%
 Chapter 4: Database                                   | 100%   | 0%
 Chapter 5: User Logins                                | 100%   | 0%
 Chapter 6: Profile Page and Avatars                   | 100%   | 0%
-Chapter 7: Error Handling                             | 0%     | 0%
+Chapter 7: Error Handling                             | 5%     | 0%
 Chapter 8: Followers                                  | 0%     | 0%
 Chapter 9: Pagination                                 | 0%     | 0%
 Chapter 10: Email Support                             | 0%     | 0%
