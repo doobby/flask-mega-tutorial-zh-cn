@@ -1,10 +1,10 @@
 # Web 表单
 
-在[第二章](chapter.md)中，我们创建了模板来生成应用的主页，其中的用户对象和博客对象是我们伪造的数据。在本章中我们来处理应用中的另一个重要问题：如何来接受用户提交的表单数据。
+在[第二章](chapter.md)中，我们创建了模板来生成应用的主页，其中的用户对象和博客对象是我们伪造的数据。在本章中我们来处理应用中的另一个重要问题：如何来接受用户提交的数据。
 
-Web 表单 (Web Form) 是 Web 应用的重要组成部分。我将会演示如何通过 Web 表单来支持用户提交新的博客以及登录到应用。
+Web 表单 (Web Form) 是 Web 应用的重要组成部分。我将会演示如何通过 Web 表单来支持登录到应用，并提交新的博客,
 
-在开始这一章这前，确保你已经完成了我们在前面章节完成的应用代码并且可以正常运行
+在开始这一章这前，确保你已经完成了前面章节的代码并且可以正常运行。
 
 ## Flask-WTF 简介
 
@@ -20,7 +20,7 @@ Flask 扩展也是普通的 Python 包，可以通过 `pip` 来安装，如下�
 
 到目前我们的应用还是相对简单的，我们暂时还没有关注配置 (Configuration) 的问题。一旦涉及到更复杂的问题，就需要通过一系列的配置来使 Flask 及其扩展实现更灵活的功能。
 
-为应用程序提供配置选项有多种方式。最基本的办法是将键值对存储在 `app.config` 字典对象中。例如
+为应用程序提供配置选项有多种方式。最简单的方法是将键值对存储在 `app.config` 字典对象中。例如
 
 ```python
 app = Flask(__name__)
@@ -41,9 +41,9 @@ class Config(object):
 
 很简单不是？配置被定义成 `Config` 类成员变量。其它变量也可以依样添加到这个类中，如果后面我需要不止一组配置集时，我可以继承实现 `Config` 的子类。当然现在我们不用这么做。
 
-`SECRET_KEY` 变量是 Flask 应用的一个重要配置。Flask 和它的一些扩展使用这个 SECRET KEY 用于加密、生成签名或令牌（tokens）。Flask-WTF 扩展使用 SECRET KEY 来保护 Web Form 来免受 [跨站请求伪造(Cross-Site Request Forgery, CSRF)](http://en.wikipedia.org/wiki/Cross-site_request_forgery) 的攻击。因为这个变量是私密的，生成的令牌或是签名的安全性都依赖于它，要确保不会有不可信的人或者应用获得这一密码。
+`SECRET_KEY` 变量是 Flask 应用的一个重要配置。Flask 和它的一些扩展使用这个 SECRET KEY 用于加密、生成签名或令牌（tokens）。Flask-WTF 扩展使用 SECRET KEY 来保护 Web Form 来免受 [跨站请求伪造(Cross-Site Request Forgery, CSRF)](http://en.wikipedia.org/wiki/Cross-site_request_forgery) 的攻击。因为这个变量是私密的，生成的令牌或是签名的安全性都依赖于它，我们需要确保不会有不可信的人或者应用获得这一密码。
 
-我们设定 SECRET_KEY 时使用了 `or` 语句，表示首先我们尝试使用环境变量 `SECRET_KEY`，如果没有环境变量，则使用硬编码的字符串。这种优先使用环境变量，提供硬编码配置作为备用的方式在开发中很常见。在开发过程中，我们对安全性的要求并不那么高，这样我们可以使用默认的硬编码值。当真实部署到生产环境时，我们可以为每个环境设置不同的密码以确保安全性。
+设定 SECRET_KEY 时使用了 `or` 语句，表示首先尝试使用环境变量 `SECRET_KEY`，如果没有环境变量，则使用硬编码的字符串。这种优先使用环境变量，提供硬编码配置作为备用的方式在开发中很常见。在开发过程中，我们对安全性的要求并不那么高，这样我们可以使用默认的硬编码值。当真实部署到生产环境时，我们可以为每个环境设置不同的密码以确保安全性。
 
 现在我们有了配置文件，我们要告诉 Flask 加载并使用它。可以通过 `app.config.from_object()` 方法来实现，如下 `app/__init__.py` 所示
 
@@ -57,9 +57,9 @@ app.config.from_object(Config)
 from app import routes
 ```
 
-从 `config` 中导入 `Config` 需要留意一个，正如我们从 `flask` 包中导入 `Flask` 类。小写的 `config` 表示 Python 模块 _config.py_ ，而大写的 C 表示 Config 类。
+从 `config` 中导入 `Config` 需要留意一下，正如我们从 `flask` 包中导入 `Flask` 类。小写的 `config` 表示 Python 模块 `config.py` ，而大写的 C 表示 `Config` 类。
 
-`app.config` 的配置项可以像字典元素一样被访问。这里我们在 Python 解释器进行验证
+`app.config` 的配置项可以像字典元素一样被访问。我们可以在 Python 解释器加以验证
 
 ```python
 >>> from microblog import app
@@ -69,7 +69,7 @@ from app import routes
 
 ## 用户登录表单
 
-Flask-WTF 扩展使用 Python 类来表示 Web 表单。一个 Form 类基本就是把定义了类成员变量的普通类。
+Flask-WTF 扩展使用 Python 类来表示 Web 表单。一个 Form 类基本就是定义了类成员变量的普通类。
 
 记着我们的关注点分离原则，我现在要定义一个新的 `app/forms.py` 模块来存储我们的 Web 表单类。用户登录时需要提供用户名和密码，此外表单还会有一个“记住登录状态”的选项以及一个“提交”按键
 
@@ -122,7 +122,7 @@ class LoginForm(FlaskForm):
 
 HTML 的 `<form>` 元素中包含了我们的 Web 表单。其中 `action` 属性指示了浏览器在进行提交时应该使用的 URL，当设置为空时默认使用当前 URL 地址（当前页面）。`method` 方法表示使用何种 HTTP 请求方法，默认方式为 `GET`，不过大多数时间我们选择 `POST` 方法，因为它把用户提交的数据包含在请求内容中，而非像 GET 一样添加在 URL 中。`novalidate` 告诉浏览器不要对表单的内容进行验证，而是交给 Flask 服务来验证。使用 `novalidate` 是可选的，我们先这样设置，这样我们可以测试服务端的验证功能。
 
-`form.hidden_tag()` 生成了一个隐藏的元素，其中包含了用于防止 CSRF 攻击的令牌信息。我们要做是确保引入这一隐藏元素，并且在 Flask 配置中定义 `SECRET_KEY` 变量，其它的都由 Flask-WTF 扩展来完成。
+`form.hidden_tag()` 生成了一个隐藏的元素，其中包含了用于防止 CSRF 攻击的令牌信息。我们需要引入这一隐藏元素，并且在 Flask 配置中定义 `SECRET_KEY` 变量，其它的都由 Flask-WTF 扩展来完成。
 
 如果你曾经写过 HTML Web 表单，你会奇怪在模板中我们没有为每个表单项加入 HTML 标签。这是因为我们的 form 对象知道如何生成 HTML 标签。我们要做的只是引入 `{{ form.<field_name>.label }}` 来插入标签名，引入 `{{ form.<field_name>() }}` 来生成表单项。要为 HTML 标签添加属性，我们只需要把它们当成参数传入即可。例如上面的用户名和密码我们传入了 `size` 参数，用被添加到 HTML 的 `<input>` 标签属性中。同样，你的 CSS Class 或者 ID 设置也可以这样做。
 
@@ -220,7 +220,7 @@ def login():
 </html>
 ```
 
-我们用到了 `with` 构造器来将 `get_flashed_messages()` 返回的内容保存在 `messages` 变量中，该变量仅在模板的这部分上下文内生效。`get_flashed_messages()` 函数来自于 Flask，返回了由 `flash()` 函数注册的全部消息。后面的条件判断检查是否有消息存在，如果有则以无序号列表（ `<ul>` ）方式列出每条消息（`<li>`）。用列表来显示消息并不美观，后面我们会来修改默认样式。
+我们用到了 `with` 构造器来将 `get_flashed_messages()` 返回的内容保存在 `messages` 变量中，该变量仅在模板的这部分上下文内生效。`get_flashed_messages()` 函数来自于 Flask，返回了由 `flash()` 函数注册的全部消息。后面的条件判断检查是否有消息存在，如果有则以无序号列表（ `<ul>` ）方式列出每条消息（`<li>`）。用列表来显示消息并不美观，后面我们会修改默认样式。
 
 注意：被 `get_flashed_messages()` 读取的消息将从消息列表中移除，因此只有重新 `flash()` 的消息才会被再次显示。
 
@@ -271,7 +271,7 @@ def login():
 
 ## 生成链接
 
-登录功能基本上完成了，在本章的最后我想来讨论下如何优雅的生成导航栏模板中的链接地址，以及如何进行重定向。到现在我们已经在导航栏中添加了两个链接地址了
+登录功能基本完成了，在本章的最后我想来讨论下如何优雅的生成导航栏模板中的链接地址，以及如何进行重定向。到现在我们已经在导航栏中添加了两个链接地址
 
 ```html
     <div>
