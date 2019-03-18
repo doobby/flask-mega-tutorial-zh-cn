@@ -1,16 +1,16 @@
 # 数据库 （Database）
 
-本章非常重要。对于大多数应用都需要数据的持久化和高效访问，这正是引入数据库的意义。
+本章非常重要。大多数应用都需要数据的持久化和高效访问，所以需要引入数据库。
 
 ## 数据库与 Flask 
 
-你大概已经知道 Flask 本身并没有提供数据库支持。事实上 Flask 在很多方面都做了刻意的裁剪，这样也很好，我们可以自由的使用最适合于我们应用场景的数据库，而不必被迫写一堆代码来适配。
+你大概已经知道 Flask 本身并没有提供数据库支持。事实上 Flask 在很多方面都做了刻意的精简，这样也不错，使得我们可以自由地选择最适合于我们应用场景的数据库，而不必被迫写一堆接口来适配。
 
-Python 访问数据库有很多种选择，其中有很多都提供了 Flask 的扩展以更方便地与应用集成。数据库本身被分为两大类：关系型的（relational model）和非关系型的。后者也常常被称为 _NoSQL_，表示这类数据库并不支持关系数据库查询语言（SQL）。两类数据库都有很多种产品，在我看来关系型数据库更加适合于我们的应用，它可以有效的组织用户、博客等数据结构。而 NoSQL 数据库更加适应于结构性不那么强的数据。当然我们的应用也可以用 NoSQL 来实现，不过我还是准备使用关系型的。
+Python 访问数据库有很多种选择，其中有很多都提供了 Flask 的扩展以更方便地与 Flask 框架集成。数据库本身分为两大类：关系型数据库（relational model）和非关系型数据库。后者也常常被称为 _NoSQL_，表示这类数据库并不支持关系数据库查询语言（SQL）。两类数据库都有很多种实现，关系型数据库更加适合于我们的应用，它可以有效的组织用户、博客等数据结构。而 NoSQL 数据库更加适应于结构性不那么强的数据。当然我们的应用也可以用 NoSQL 来实现，不过我还是打算使用关系型数据库。
 
-在[第三章](chapter3.md)中，我为你展示了第一个 Flask 扩展。在本章中我还将使用两个扩展，首先是[Flask-SQLAlchemy](http://packages.python.org/Flask-SQLAlchemy)，这是对 [SQLAlchemy](http://packages.python.org/Flask-SQLAlchemy) 的封装，使得更适合 Flask 的规范和使用。SQLAlchemy 提供了 ORM (Object Relational Mapper）实现，使得应用可以以更高层次的类(class)，对象(object)，方法(methods) 来操作数据库，避免直接操纵表(table) 和 SQL 语句。ORM 的作用是将高阶操作映射成为数据库的底层操作。
+在[第三章](chapter3.md)中，我为你展示了第一个 Flask 扩展。在本章中我还将使用两个扩展，首先是[Flask-SQLAlchemy](http://packages.python.org/Flask-SQLAlchemy)，这是对 [SQLAlchemy](http://packages.python.org/Flask-SQLAlchemy) 的封装，使得更符合 Flask 的范式和更易使用。SQLAlchemy 提供了 ORM (Object Relational Mapper）实现，使得应用可以以更高层次的类(class)，对象(object)，方法(methods) 来操作数据库，避免直接操纵表(table) 和 SQL 语句。ORM 的作用是将高阶操作映射成为数据库的底层操作。
 
-SQLAlchemy 同时支持很多种关系型数据库的 ORM 映射，常见的如 [MySQL](https://www.mysql.com/)， [PostgreSQL](https://www.postgresql.org/) 以及 [SQLite](https://www.postgresql.org/)。这种特性很有用，我们可以在开发时使用本地的 SQLite 数据库，而在部署时换用更健壮的 MySQL 或者 PostgreSQL 数据库，不需要对代码作出修改。
+SQLAlchemy 支持多种关系型数据库的 ORM 映射，常见的如 [MySQL](https://www.mysql.com/)， [PostgreSQL](https://www.postgresql.org/) 以及 [SQLite](https://www.postgresql.org/)。这种特性很有用，我们可以在开发时使用本地的 SQLite 数据库，而在部署时换用更健壮的 MySQL 或者 PostgreSQL 数据库，不需要对代码作出修改。
 
 要安装 Flask-SQLAlchemy 包，确保已经激活 (activate) 虚拟环境，执行 pip 命令
 
@@ -20,9 +20,9 @@ SQLAlchemy 同时支持很多种关系型数据库的 ORM 映射，常见的如 
 
 ## 数据库迁移（Migrations）
 
-大部分的数据库教程都会详细介绍如何创建和使用库，但对于当应用更新而需要对数据库进行更新的问题解释很不详细。当然，关系型数据库的更新本身就很困难，因为围绕着结构化数据，任何结构的改变都有很大的迁移(Migrated) 工作量。
+大部分的数据库教程都会详细介绍如何创建和使用库，但随着应用演进而需要对数据库结构进行更新的问题解释很不详细。当然，关系型数据库的更新本身就很困难，因为围绕着结构化数据，任何结构的改变都有很大的迁移(Migrated) 工作量。
 
-我要使用的第二个扩展是 [Flask-Migrate](https://github.com/miguelgrinberg/flask-migrate)，这正是我们想要的。这一扩展封装了 [Alembic](https://github.com/miguelgrinberg/flask-migrate) 库，该库是针对 SQLAlchemy 的数据库迁移框架。要加入数据库迁移支持，我们需要在开始时做一些额外的工作 ，但这是值得的，这让你后来的修改变得更加容易和稳定。
+我要使用的第二个扩展是 [Flask-Migrate](https://github.com/miguelgrinberg/flask-migrate)，这正是我们想要的。这一扩展封装了 [Alembic](https://bitbucket.org/zzzeek/alembic) 库，该库是针对 SQLAlchemy 的数据库迁移框架。要加入数据库迁移支持，我们需要在开始时做一些额外的工作 ，这种q额外的工作是非常值得的，这让你后来的修改变得更加容易和稳定。
 
 同样使用 pip 来安装扩展
 
@@ -32,9 +32,9 @@ SQLAlchemy 同时支持很多种关系型数据库的 ORM 映射，常见的如 
 
 ## 配置 Flask-SQLAlchemy
 
-在开发过程中，我们选择使用 SQLite 数据库。SQLite 数据库是开发小型甚至更大规模应用最方便好用的数据库。它的数据被存储于硬盘上的一个文件中，不需要像 MySQL 或者 PostgreSQL 那样启动服务。
+在开发过程中，我们选择使用 SQLite 数据库。SQLite 数据库是开发小型甚至大规模应用最易用的数据库。它的数据被存储于硬盘上的一个文件中，不需要像 MySQL 或者 PostgreSQL 那样需要预先配置服务。
 
-我们为配置 `config.py` 中添加相关配置，如下
+我们在配置代码 `config.py` 中添加相关参数，如下
 
 ```python
 import os
@@ -47,7 +47,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 ```
 
-Flask-SQLAlchemy 扩展从 `SQLALCHEMY_DATABASE_URI` 配置变量中获取数据库的连接信息。回忆一下我们在[第三章](chapter3.md)所讲，使用环境变量来配置 Flask，并为之提供一个默认值以防环境变量没有设置。在这里，我通过 `DATABASE_URL` 环境变量来设置数据库地址，如果未指定，则使用应用主目录( `basedir` )下的 `app.db` 文件做为默认位置 。
+Flask-SQLAlchemy 扩展从 `SQLALCHEMY_DATABASE_URI` 配置变量中获取数据库的连接信息。回忆一下我们在[第三章](chapter3.md)所讲，使用环境变量来配置 Flask，并为之提供一个默认值。这里我通过 `DATABASE_URL` 环境变量来设置数据库地址，如果未指定，则使用应用主目录( `basedir` )下的 `app.db` 文件做为默认位置 。
 
 `SQLALCHEMY_TRACK_MODIFICATIONS` 配置项设为 `False` 禁用了 Flask-SQLAlchemy 中我们暂时用不到的功能：在每次修改数据库时触发某个操作。
 
@@ -84,7 +84,7 @@ from app import routes, models
 
 其中 `id` 几乎在表示模型中都会出现，通常被用作主键(primary key)。库中的每个用户都被分配以唯一的 ID。大多数情况主键会由数据库自动分配，所以我们这里只需要将之标记为主键即可。
 
-`username`, `email`, `password_hash` 字段为字符串类型（数据库中称为 `VARCHAR` 类型），我们设定了它们的最大长度以优化数据库存储性能。`username` 和 `email` 不用多解释，`password_hash` 有点技巧。为了安全计，我们不应该直接把密码保存在数据库里，否则很可能被攻击而导致密码泄露。所以我们存放的是密码的哈希值，这样安全得多。后面我将详细解释，现在我们暂时跳过其中细节。
+`username`, `email`, `password_hash` 字段为字符串类型（数据库中称为 `VARCHAR` 类型），我们设定了它们的最大长度以优化数据库存储性能。`username` 和 `email` 不用多解释，`password_hash` 有点技巧。出于安全考虑，我们不应该直接把密码保存在数据库里，否则很可能被攻击而导致密码泄露。所以我们存放的是密码的哈希值，这样安全得多。后面我将详细解释，现在我们暂时跳过其中细节。
 
 设计好了用户表，我们现在可以实现代码来表示它，如下我们在 `app/models.py` 中定义了用户表
 
@@ -101,7 +101,7 @@ class User(db.Model):
         return '<User {}>'.format(self.username)    
 ```
 
-`User` 类继承了 `db.Model` 基类，该基类是 Flask-SQLAlchemy 所有模型都应该继承的。在类中，我们定义了四个类成员变量，其内容是 `db.Column` 的实例，指定了列的类型，加上一些可选的配置项，表示哪些列是不允许重复的(unique)，哪些列需要加索引（indexed）以提高访问效率。
+`User` 类继承了 `db.Model` 基类，该基类是 Flask-SQLAlchemy 所有数据库模型都应该继承的。在该类中，我们定义了四个类成员变量，其内容是 `db.Column` 的实例，指定了列的类型，加上一些可选的配置项，表示哪些列是不允许重复的(unique)，哪些列需要加索引（indexed）以提高访问效率。
 
 里面的 `__repr__` 方法告诉 Python 如何来显示这类对象，清晰的表示有利于调试。我们可以在交互式命令行中试验一下
 
@@ -169,7 +169,7 @@ INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
 
 ## 数据库的升级与回退流程
 
-尽管我们的应用现在还只是个雏形，现在讨论数据库迁移升级策略并不显早。假设你的应用在开发环境上运行，同时在线上还部署了一份生产环境在使用。
+尽管我们的应用现在还只是个雏形，现在讨论数据库迁移升级策略并不算早。假设你的应用在开发环境上运行，同时在线上还部署了一份生产环境在使用。
 
 如果在下一版本中你对你的数据库模型做了一些修改，比如添加了一个新的表结构。若是没有迁移策略来帮助我们修改数据库表结构，那么你就得手动对本地开发环境和线上生产环境进行维护，那将会是很大的工作量。
 
@@ -181,7 +181,7 @@ INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
 
 ## 数据库关系 (Relationships)
 
-关系型数据库非常适合表示数据之间的关系。比如我们的用户信息(`users`)和博客(`posts`)之间就有关联关系。最高效的方式是设计一个关联关系表，把两者连接在一起。
+关系型数据库非常适合表示数据之间的关系。比如我们的用户信息(`users`)和博客(`posts`)之间就有关联关系。最高效的方式是设计一个关联表，把两者连接在一起。
 
 一旦在用户和博客之间建立了关联关系，数据库就能自动处理这条连接。最基本的功能是给你一篇博客，你就能得知它的作者是谁。较复杂一点的应用场景是给你一个用户，我们可以查找同所有他写的博客。Flask-SQLAlchemy 同时支持这两种查询方式。
 
@@ -243,11 +243,11 @@ INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, posts table
 ```
 
-记着把升级迁移脚本加到你的版本控制中去。
+记着把迁移脚本加到你的版本控制中去。
 
 ## 游戏时间
 
-我们已经花了很长时间来定义数据库了，但还没有真正涉及使用，因为我们的应用暂还用不着。让我们先通过 Python 解释器来试用一个这些数据库表。在虚拟环境中执行 `python` 进入交互式命令行，然后导入数据库的实例和模型
+我们已经花了很长时间来定义数据库了，但还没有真正涉及使用，因为我们的应用暂时还用不着。让我们先通过 Python 解释器来试用一gh 这些数据库表。在虚拟环境中执行 `python` 进入交互式命令行，然后导入数据库的实例和模型
 
 ```python
 >>> from app import db
@@ -363,7 +363,7 @@ INFO  [alembic.runtime.migration] Running upgrade e517276bb1c2 -> 780739b227a7, 
 
 因为我们需要经常性的启动 Python Shell 来做一些验证，每次手动输入这些导入语句就太麻烦了。好在有 `flask shell` 子命令，这是仅次于 `run` 的第二重要的子命令。`shell` 命令启动了一个加载了应用上下文的 Python 解释器，如下所示
 
-```python
+```bash
 (venv) $ python
 >>> app
 Traceback (most recent call last):
@@ -376,11 +376,11 @@ NameError: name 'app' is not defined
 <Flask 'app'>
 ```
 
-普通的 Python 解释器需要我们显示的导入 `app`，而在 `flask shell` 会预加载这个应用实例。除了 `app` 之外，你还可以配置 shell 的上下文来指定预加载的符号内容。
+普通的 Python 解释器需要我们显式地导入 `app`，而在 `flask shell` 会预加载这个应用实例。除了 `app` 之外，你还可以配置 shell 的上下文来指定预加载的符号内容。
 
 比如我们可以在 `microblog.py` 中创建一个 shell 上下文，为 `flask shell` 加入数据库实例以及模型定义
 
-```python
+```bash
 from app import app, db
 from app.models import User, Post
 
@@ -393,7 +393,7 @@ def make_shell_context():
 
 注册过 shell 上下文处理函数后，我们可以直接在 flask shell 中使用这些变量
 
-```python
+```bash
 (venv) $ flask shell
 >>> db
 <SQLAlchemy engine=sqlite:////Users/migu7781/Documents/dev/flask/microblog2/app.db>
